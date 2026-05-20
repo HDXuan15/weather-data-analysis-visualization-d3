@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Task 12 - Ban ngày dài có ảnh hưởng đến UV không?</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .chart-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 10px 16px;
+        background: #134e4a;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background 200ms ease;
+      }
+      .back-link:hover {
+        background: #0f3432;
+      }
+      circle {
+        transition: all 200ms ease;
+        cursor: pointer;
+      }
+      circle:hover {
+        filter: brightness(1.2);
+        stroke: #0f172a !important;
+        stroke-width: 2 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chart-container">
+      <a href="index.html" class="back-link">← Quay lại trang chủ</a>
+      <h1>Ban ngày dài có ảnh hưởng đến UV không?</h1>
+      <svg id="chart12" style="max-width: 100%; height: auto"></svg>
+    </div>
+
+    <div id="tooltip"></div>
+
+    <script src="task12.js"></script>
+  </body>
+</html>

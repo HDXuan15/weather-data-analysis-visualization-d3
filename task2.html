@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Task 2 - So sánh nhiệt độ giữa các vùng</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .chart-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 10px 16px;
+        background: #0f766e;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background 200ms ease;
+      }
+      .back-link:hover {
+        background: #115e59;
+      }
+      rect {
+        transition: all 200ms ease;
+        cursor: pointer;
+      }
+      rect:hover {
+        opacity: 0.9 !important;
+        filter: brightness(1.15);
+        stroke: #0f172a;
+        stroke-width: 2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chart-container">
+      <a href="index.html" class="back-link">← Quay lại trang chủ</a>
+      <h1>So sánh nhiệt độ giữa các vùng</h1>
+      <svg id="chart2" style="max-width: 100%; height: auto"></svg>
+    </div>
+
+    <div id="tooltip"></div>
+
+    <script src="task2.js"></script>
+  </body>
+</html>
