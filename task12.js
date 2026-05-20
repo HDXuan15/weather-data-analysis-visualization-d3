@@ -55,22 +55,6 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
     .nice()
     .range([innerHeight, 0]);
 
-  svg
-    .append("text")
-    .attr("class", "chart-title")
-    .attr("x", outerWidth / 2)
-    .attr("y", 42)
-    .attr("text-anchor", "middle")
-    .text("Ban ngày dài có ảnh hưởng đến UV không?");
-
-  svg
-    .append("text")
-    .attr("class", "chart-subtitle")
-    .attr("x", outerWidth / 2)
-    .attr("y", 66)
-    .attr("text-anchor", "middle")
-    .text("Mỗi điểm là một quan sát trong df_weather_fixed_utf8.csv");
-
   chart
     .append("g")
     .attr("transform", `translate(0,${innerHeight})`)

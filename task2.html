@@ -16,7 +16,7 @@
         display: inline-block;
         margin-bottom: 20px;
         padding: 10px 16px;
-        background: #0f766e;
+        background: #6b21a8;
         color: white;
         text-decoration: none;
         border-radius: 8px;
@@ -26,6 +26,35 @@
       }
       .back-link:hover {
         background: #115e59;
+      }
+      .chart-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 18px 0 18px;
+      }
+      .sort-button {
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 999px;
+        padding: 10px 16px;
+        background: rgba(255, 255, 255, 0.92);
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          transform 180ms ease,
+          box-shadow 180ms ease,
+          border-color 180ms ease;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      }
+      .sort-button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(91, 33, 182, 0.28);
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+      }
+      .sort-button:active {
+        transform: translateY(0);
       }
       rect {
         transition: all 200ms ease;
@@ -42,7 +71,18 @@
   <body>
     <div class="chart-container">
       <a href="index.html" class="back-link">← Quay lại trang chủ</a>
-      <h1>So sánh nhiệt độ giữa các vùng</h1>
+      <h1>
+        So sánh nhiệt độ giữa các vùng - Sự khác biệt nhiệt độ trung bình giữa
+        các location.region là gì?
+      </h1>
+      <div class="chart-controls">
+        <button id="sort-ascending" class="sort-button" type="button">
+          Sort Ascending
+        </button>
+        <button id="sort-descending" class="sort-button" type="button">
+          Sort Descending
+        </button>
+      </div>
       <svg id="chart2" style="max-width: 100%; height: auto"></svg>
     </div>
 

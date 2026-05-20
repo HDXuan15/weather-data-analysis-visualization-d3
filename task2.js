@@ -20,6 +20,12 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
     .map(([region, avgTemp]) => ({ region, avgTemp }))
     .sort((a, b) => d3.descending(a.avgTemp, b.avgTemp));
 
+  const tooltip = d3.select("#tooltip");
+  const sortButtons = {
+    ascending: document.getElementById("sort-ascending"),
+    descending: document.getElementById("sort-descending"),
+  };
+
   const svg = d3.select("#chart2");
   const outerWidth = 960;
   const outerHeight = 560;
@@ -32,6 +38,12 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
   const chart = svg
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const barsGroup = chart.append("g").attr("class", "bars");
+  const xAxisGroup = chart
+    .append("g")
+    .attr("transform", `translate(0,${innerHeight})`);
+  const yAxisGroup = chart.append("g");
 
   const x = d3
     .scaleBand()
@@ -50,76 +62,97 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
     .domain(d3.extent(grouped, (d) => d.avgTemp))
     .interpolator(d3.interpolatePurples);
 
-  svg
-    .append("text")
-    .attr("class", "chart-title")
-    .attr("x", outerWidth / 2)
-    .attr("y", 42)
-    .attr("text-anchor", "middle")
-    .text(
-      "So sánh nhiệt độ giữa các vùng - Sự khác biệt nhiệt độ trung bình giữa các location.region là gì?",
-    );
+  const applyXAxisLabelStyle = () => {
+    xAxisGroup
+      .selectAll("text")
+      .attr("transform", "rotate(-35)")
+      .style("text-anchor", "end");
+  };
 
-  svg
-    .append("text")
-    .attr("class", "chart-subtitle")
-    .attr("x", outerWidth / 2)
-    .attr("y", 66)
-    .attr("text-anchor", "middle")
-    .text("AVG(Day.Avgtemp_C) theo Location.Region");
+  const attachBarInteractions = (selection) => {
+    selection
+      .on("mouseenter", function (event, d) {
+        d3.select(this)
+          .transition("hover")
+          .duration(120)
+          .attr("opacity", 0.8)
+          .attr("filter", "brightness(1.2)");
 
-  chart
-    .append("g")
-    .attr("transform", `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(x))
-    .selectAll("text")
-    .attr("transform", "rotate(-35)")
-    .style("text-anchor", "end");
+        tooltip
+          .style("opacity", 1)
+          .html(
+            `<strong>${d.region}</strong><br/>Avg Temp: <strong>${d.avgTemp.toFixed(2)}°C</strong>`,
+          )
+          .style("left", `${event.pageX + 12}px`)
+          .style("top", `${event.pageY + 12}px`);
+      })
+      .on("mousemove", function (event) {
+        tooltip
+          .style("left", `${event.pageX + 12}px`)
+          .style("top", `${event.pageY + 12}px`);
+      })
+      .on("mouseleave", function () {
+        d3.select(this)
+          .transition("hover")
+          .duration(120)
+          .attr("opacity", 1)
+          .attr("filter", "brightness(1)");
 
-  chart.append("g").call(d3.axisLeft(y));
+        tooltip.style("opacity", 0);
+      });
+  };
 
-  const tooltip = d3.select("#tooltip");
+  const renderChart = (order) => {
+    const sortedData = [...grouped].sort((a, b) => {
+      if (order === "ascending") {
+        return d3.ascending(a.avgTemp, b.avgTemp);
+      }
 
-  chart
-    .append("g")
-    .selectAll("rect")
-    .data(grouped)
-    .join("rect")
-    .attr("x", (d) => x(d.region))
-    .attr("y", (d) => y(d.avgTemp))
-    .attr("width", x.bandwidth())
-    .attr("height", (d) => innerHeight - y(d.avgTemp))
-    .attr("rx", 8)
-    .attr("fill", (d) => color(d.avgTemp))
-    .on("mouseenter", function (event, d) {
-      d3.select(this)
-        .transition("hover")
-        .duration(120)
-        .attr("opacity", 0.8)
-        .attr("filter", "brightness(1.2)");
-
-      tooltip
-        .style("opacity", 1)
-        .html(
-          `<strong>${d.region}</strong><br/>Avg Temp: <strong>${d.avgTemp.toFixed(2)}°C</strong>`,
-        )
-        .style("left", `${event.pageX + 12}px`)
-        .style("top", `${event.pageY + 12}px`);
-    })
-    .on("mousemove", function (event, d) {
-      tooltip
-        .style("left", `${event.pageX + 12}px`)
-        .style("top", `${event.pageY + 12}px`);
-    })
-    .on("mouseleave", function () {
-      d3.select(this)
-        .transition("hover")
-        .duration(120)
-        .attr("opacity", 1)
-        .attr("filter", "brightness(1)");
-
-      tooltip.style("opacity", 0);
+      return d3.descending(a.avgTemp, b.avgTemp);
     });
+
+    x.domain(sortedData.map((d) => d.region));
+
+    const sortTransition = d3.transition().duration(1000).ease(d3.easeCubic);
+
+    xAxisGroup.transition(sortTransition).call(d3.axisBottom(x));
+    applyXAxisLabelStyle();
+    yAxisGroup.call(d3.axisLeft(y));
+
+    barsGroup
+      .selectAll("rect")
+      .data(sortedData, (d) => d.region)
+      .join(
+        (enter) =>
+          enter
+            .append("rect")
+            .attr("x", (d) => x(d.region))
+            .attr("y", (d) => y(d.avgTemp))
+            .attr("width", x.bandwidth())
+            .attr("height", (d) => innerHeight - y(d.avgTemp))
+            .attr("rx", 8)
+            .attr("fill", (d) => color(d.avgTemp))
+            .call(attachBarInteractions),
+        (update) =>
+          update
+            .transition(sortTransition)
+            .attr("x", (d) => x(d.region))
+            .attr("y", (d) => y(d.avgTemp))
+            .attr("width", x.bandwidth())
+            .attr("height", (d) => innerHeight - y(d.avgTemp))
+            .attr("fill", (d) => color(d.avgTemp)),
+        (exit) => exit.remove(),
+      );
+  };
+
+  renderChart("descending");
+
+  sortButtons.ascending?.addEventListener("click", () =>
+    renderChart("ascending"),
+  );
+  sortButtons.descending?.addEventListener("click", () =>
+    renderChart("descending"),
+  );
 
   svg
     .append("text")
