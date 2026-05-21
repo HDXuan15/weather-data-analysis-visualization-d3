@@ -1,0 +1,1410 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Faceted Multi-line Weather Chart - Trực quan hóa dữ liệu</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 30px 20px;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 980px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      .header p {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      .content {
+        padding: 40px;
+      }
+
+      #chart-container {
+        position: relative;
+        width: 100%;
+        margin: 20px 0;
+      }
+
+      svg {
+        display: block;
+        margin: 0 auto;
+      }
+
+      /* Kiểu cho trục */
+      .axis {
+        font-size: 12px;
+        color: #555;
+      }
+
+      .axis-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      /* Kiểu cho lưới */
+      .grid line {
+        stroke: #e0e0e0;
+        stroke-dasharray: 2;
+        stroke-opacity: 0.5;
+      }
+
+      .grid path {
+        stroke: none;
+      }
+
+      /* Kiểu cho đường line */
+      .line {
+        fill: none;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+
+      .line.active {
+        stroke-width: 3.5;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+      }
+
+      .line.inactive {
+        stroke-opacity: 0.2;
+        stroke-width: 1.5;
+      }
+
+      /* Kiểu cho circle markers */
+      .circle-marker {
+        stroke-width: 1;
+        cursor: pointer;
+        transition: r 0.2s ease;
+      }
+
+      .circle-marker:hover {
+        r: 5px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+      }
+
+      .circle-marker.inactive {
+        fill-opacity: 0.2;
+      }
+
+      /* Kiểu cho tooltip */
+      .tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        pointer-events: none;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .tooltip-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #4dd0e1;
+      }
+
+      .tooltip-content {
+        line-height: 1.6;
+      }
+
+      /* Kiểu cho legend */
+      .legend {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin: 30px 0;
+        flex-wrap: wrap;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #333;
+      }
+
+      .legend-color {
+        width: 24px;
+        height: 3px;
+        border-radius: 2px;
+      }
+
+      .legend-color.coastal {
+        background-color: #4682b4;
+      }
+
+      .legend-color.inland {
+        background-color: #ff8c00;
+      }
+
+      /* Facet titles */
+      .facet-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #333;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+
+      /* Loading state */
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-size: 16px;
+      }
+
+      .loading::after {
+        content: "";
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        margin-left: 10px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Error state */
+      .error {
+        background: #ffebee;
+        color: #c62828;
+        padding: 20px;
+        border-radius: 6px;
+        border-left: 4px solid #c62828;
+        margin: 20px 0;
+      }
+
+      .error-title {
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .header h1 {
+          font-size: 22px;
+        }
+
+        .content {
+          padding: 20px;
+        }
+
+        .legend {
+          gap: 15px;
+        }
+      }
+
+      /* Filter buttons */
+      .filter-box {
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      .filter-btn {
+        padding: 8px 16px;
+        margin: 0 5px;
+        border: 1px solid #ccc;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: 0.2s;
+      }
+
+      .filter-btn.active {
+        background: #1331b3;
+        color: white;
+        border-color: #667eea;
+      }
+
+      .filter-btn:hover {
+        border-color: #667eea;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Biểu đồ So sánh thời tiết tỉnh ven biển và nội địa</h1>
+        <p>
+          Phân tích So sánh Nhiệt độ, Độ ẩm và Lượng mưa giữa Ven biển và Nội
+          địa
+        </p>
+      </div>
+
+      <div class="content">
+        <!-- Legend -->
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-color coastal"></div>
+            <span>Ven biển</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color inland"></div>
+            <span>Nội địa</span>
+          </div>
+        </div>
+
+        <!-- Filter buttons -->
+        <div class="filter-box">
+          <button class="filter-btn active" data-filter="all">Tất cả</button>
+          <button class="filter-btn" data-filter="Ven biển">Ven biển</button>
+          <button class="filter-btn" data-filter="Nội địa">Nội địa</button>
+        </div>
+
+        <!-- Chart Container -->
+        <!-- Chart Container -->
+        <div id="chart-container">
+          <div class="loading">Đang tải dữ liệu...</div>
+        </div>
+
+        <!-- Container cho Biểu đồ 100% Stacked Bar Chart nằm ngang (Task 5) -->
+        <div id="horizontal-stacked-weather-chart" style="margin-top: 40px">
+          <h3 style="text-align: center; margin-bottom: 8px">
+            Cơ cấu trạng thái thời tiết giữa vùng ven biển và nội địa
+          </h3>
+          <div
+            id="hsw-controls"
+            style="text-align: center; margin-bottom: 10px"
+          ></div>
+          <div id="hsw-chart" style="width: 100%; height: 260px">
+            <!-- SVG sẽ được chèn bằng D3 -->
+          </div>
+          <div
+            id="hsw-legend"
+            style="text-align: center; margin-top: 10px"
+          ></div>
+        </div>
+
+        <!-- Tooltip -->
+        <div id="tooltip" class="tooltip">
+          <div class="tooltip-title" id="tooltip-title"></div>
+          <div class="tooltip-content" id="tooltip-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // =====================================================
+      // CẤU HÌNH CHÍNH
+      // =====================================================
+
+      // Khai báo biến toàn cục
+      let selectedTime = null;
+      let selectedTerrain = null;
+      let selectedTerrainFilter = "all";
+      let globalSvg = null;
+      // Biến trạng thái được chọn theo trạng thái thời tiết (Day.Condition.Text)
+      // Hỗ trợ chọn nhiều trạng thái cùng lúc
+      let selectedWeatherConditions = new Set();
+      // Lưu trữ raw CSV toàn cục để có thể rebuild line charts khi filter
+      window.__rawCsv = null;
+
+      function resetChartSelection() {
+        selectedTime = null;
+        selectedTerrain = null;
+
+        if (globalSvg) {
+          globalSvg
+            .selectAll(".circle-marker")
+            .attr("class", "circle-marker")
+            .style("opacity", 1);
+          globalSvg
+            .selectAll(".line")
+            .attr("class", "line")
+            .style("opacity", 1);
+          globalSvg.selectAll(".svg-pinned-tooltip").remove();
+        }
+
+        const tooltipEl = document.getElementById("tooltip");
+        if (tooltipEl) tooltipEl.style.display = "none";
+      }
+
+      function resetLineChartOnlySelection() {
+        if (selectedTime === null && selectedTerrain === null) return;
+
+        selectedTime = null;
+        selectedTerrain = null;
+
+        if (globalSvg) {
+          globalSvg.selectAll(".svg-pinned-tooltip").remove();
+          globalSvg
+            .selectAll(".line")
+            .attr("class", "line")
+            .style("opacity", 1);
+          globalSvg
+            .selectAll(".circle-marker")
+            .attr("class", "circle-marker")
+            .style("opacity", 1);
+        }
+
+        applyTerrainFilterToLineCharts(selectedTerrainFilter);
+
+        const tooltipEl = document.getElementById("tooltip");
+        if (tooltipEl) tooltipEl.style.display = "none";
+      }
+
+      // Cấu hình kích thước biểu đồ (đã điều chỉnh để nhỏ gọn hơn và tăng lề)
+      const mainMargin = { top: 40, right: 60, bottom: 140, left: 100 };
+      const mainWidth = Math.min(700, window.innerWidth - 200);
+      const totalHeight = 750;
+      const numCharts = 3;
+      const gap = 80; // Khoảng cách giữa các biểu đồ con (tăng để dễ nhìn)
+      const chartHeight = (totalHeight - (numCharts - 1) * gap) / numCharts;
+
+      // Định nghĩa màu sắc cho Terrain Groups
+      const colorScale = d3
+        .scaleOrdinal()
+        .domain(["Ven biển", "Nội địa"])
+        .range(["#4682B4", "#FF8C00"]);
+
+      // Cấu hình cho 3 biểu đồ con
+      const chartsConfig = [
+        {
+          key: "avgTemp",
+          label: "Nhiệt độ trung bình (°C)",
+          domain: [15, 35],
+          metric: "Nhiệt độ",
+        },
+        {
+          key: "avgHumidity",
+          label: "Độ ẩm trung bình (%)",
+          domain: [40, 90],
+          metric: "Độ ẩm",
+        },
+        {
+          key: "avgPrecip",
+          label: "Lượng mưa trung bình (mm)",
+          domain: [0, 20],
+          metric: "Lượng mưa",
+        },
+      ];
+
+      // Hàm tạo nhóm địa hình từ Terrain
+      function createTerrainGroup(terrain) {
+        if (!terrain) return "Ven biển";
+        terrain = terrain.trim().toLowerCase();
+        if (terrain === "đồng bằng" || terrain === "miền núi") {
+          return "Nội địa";
+        }
+        return "Ven biển";
+      }
+
+      // Hàm parse ngày tháng (định dạng M/D/YYYY)
+      const parseDate = d3.timeParse("%m/%d/%Y");
+
+      // Hàm lấy tháng và năm từ date
+      function getMonthYear(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        return { year, month };
+      }
+
+      // Hàm format tháng/năm để hiển thị
+      function formatMonthYear(year, month) {
+        const months = [
+          "Tháng 1",
+          "Tháng 2",
+          "Tháng 3",
+          "Tháng 4",
+          "Tháng 5",
+          "Tháng 6",
+          "Tháng 7",
+          "Tháng 8",
+          "Tháng 9",
+          "Tháng 10",
+          "Tháng 11",
+          "Tháng 12",
+        ];
+        return `${months[month - 1]} ${year}`;
+      }
+
+      function shouldIncludeWeatherCondition(conditionOrSet, condition) {
+        if (!conditionOrSet) return true;
+
+        if (conditionOrSet instanceof Set) {
+          if (conditionOrSet.size === 0) return true;
+          return conditionOrSet.has(condition);
+        }
+
+        if (typeof conditionOrSet === "string") {
+          return conditionOrSet === condition;
+        }
+
+        return true;
+      }
+
+      function buildLineChartData(sourceData, conditionOrSet = null) {
+        const processedData = sourceData
+          .map((d, i) => {
+            try {
+              const date = parseDate(d.Date);
+              if (!date) {
+                console.warn(
+                  `⚠️ Không thể parse ngày tại dòng ${i + 1}: ${d.Date}`,
+                );
+                return null;
+              }
+
+              const condition = (d[weatherColumn] || "").toString().trim();
+              if (!shouldIncludeWeatherCondition(conditionOrSet, condition)) {
+                return null;
+              }
+
+              return {
+                date: date,
+                terrain: d["Location.Terrain"] || "",
+                terrainGroup: createTerrainGroup(d["Location.Terrain"]),
+                avgTemp: +d["Day.Avgtemp C"],
+                avgHumidity: +d["Day.Avghumidity"],
+                avgPrecip: +d["Day.Totalprecip Mm"],
+                location: d["Location.Name"] || "",
+                region: d["Location.Region"] || "",
+              };
+            } catch (error) {
+              console.warn("⚠️ Lỗi xử lý dòng:", error);
+              return null;
+            }
+          })
+          .filter(
+            (d) =>
+              d !== null &&
+              !isNaN(d.avgTemp) &&
+              !isNaN(d.avgHumidity) &&
+              !isNaN(d.avgPrecip),
+          );
+
+        const groupedData = d3.rollup(
+          processedData,
+          (group) => ({
+            avgTemp: d3.mean(group, (d) => d.avgTemp),
+            avgHumidity: d3.mean(group, (d) => d.avgHumidity),
+            avgPrecip: d3.mean(group, (d) => d.avgPrecip),
+            count: group.length,
+          }),
+          (d) => getMonthYear(d.date).year,
+          (d) => getMonthYear(d.date).month,
+          (d) => d.terrainGroup,
+        );
+
+        const chartData = [];
+        groupedData.forEach((monthData, year) => {
+          monthData.forEach((dayData, month) => {
+            dayData.forEach((metrics, terrainGroup) => {
+              chartData.push({
+                year: +year,
+                month: +month,
+                terrainGroup: terrainGroup,
+                avgTemp: metrics.avgTemp,
+                avgHumidity: metrics.avgHumidity,
+                avgPrecip: metrics.avgPrecip,
+              });
+            });
+          });
+        });
+
+        chartData.sort((a, b) => {
+          const timeA = a.year * 12 + a.month;
+          const timeB = b.year * 12 + b.month;
+          return timeA - timeB;
+        });
+
+        return chartData;
+      }
+
+      function applyTerrainFilterToLineCharts(filter = selectedTerrainFilter) {
+        selectedTerrainFilter = filter;
+
+        d3.selectAll(".line").style("display", function (d) {
+          if (filter === "all") return "block";
+          return d.length > 0 && d[0].terrainGroup === filter
+            ? "block"
+            : "none";
+        });
+
+        d3.selectAll(".circle-marker").style("display", function (d) {
+          if (filter === "all") return "block";
+          return d.terrainGroup === filter ? "block" : "none";
+        });
+      }
+
+      // =====================================================
+      // LOAD VÀ XỬ LÝ DỮ LIỆU
+      // =====================================================
+
+      d3.csv(
+        "./weather-data-analysis-visualization-d3/data/df_weather_fixed_utf8(Cleaned).csv",
+      )
+        .then((rawData) => {
+          console.log(
+            "📥 Dữ liệu gốc được tải, tổng cộng:",
+            rawData.length,
+            "bản ghi",
+          );
+
+          // Lưu rawData toàn cục và vẽ biểu đồ ngang stacked weather (Task 5)
+          try {
+            window.__rawCsv = rawData;
+            if (typeof renderHorizontalStackedWeatherChart === "function") {
+              renderHorizontalStackedWeatherChart(rawData);
+            }
+          } catch (e) {
+            console.warn(
+              "Không thể gọi renderHorizontalStackedWeatherChart ngay lập tức:",
+              e,
+            );
+          }
+
+          const chartData = buildLineChartData(rawData);
+
+          console.log("📊 Dữ liệu nhóm được tạo:", chartData.length, "bản ghi");
+
+          // Tạo biểu đồ
+          renderChart(chartData);
+          applyTerrainFilterToLineCharts(selectedTerrainFilter);
+        })
+        .catch((error) => {
+          console.error("❌ Lỗi khi tải dữ liệu:", error);
+          showError(`Không thể tải dữ liệu: ${error.message}`);
+        });
+
+      // =====================================================
+      // HIỂN THỊ LỖI
+      // =====================================================
+
+      function showError(message) {
+        const container = document.getElementById("chart-container");
+        container.innerHTML = `
+                <div class="error">
+                    <div class="error-title">❌ Lỗi</div>
+                    <div>${message}</div>
+                </div>
+            `;
+      }
+
+      // =====================================================
+      // RENDER BIỂU ĐỒ
+      // =====================================================
+
+      function renderChart(data) {
+        const container = document.getElementById("chart-container");
+        container.innerHTML = ""; // Xóa loading message
+
+        // Tạo SVG chính
+        const svg = d3
+          .select("#chart-container")
+          .append("svg")
+          .attr("width", mainWidth + mainMargin.left + mainMargin.right)
+          .attr("height", totalHeight + mainMargin.top + mainMargin.bottom)
+          .append("g")
+          .attr("transform", `translate(${mainMargin.left},${mainMargin.top})`);
+
+        // Lưu vào biến toàn cục để sử dụng trong event listeners
+        globalSvg = svg;
+        const timeRange = d3.extent(data, (d) => d.year * 12 + d.month);
+        const timePoints = d3.range(timeRange[0], timeRange[1] + 1);
+        const timeLabels = timePoints.map((t) => {
+          const year = Math.floor(t / 12);
+          const month = t % 12 || 12;
+          return formatMonthYear(year, month);
+        });
+
+        // Cấu hình trục X chung
+        const xScale = d3
+          .scaleLinear()
+          .domain([timeRange[0], timeRange[1]])
+          .range([0, mainWidth]);
+
+        // Vẽ từng biểu đồ con
+        chartsConfig.forEach((config, index) => {
+          const topY = index * (chartHeight + gap);
+
+          // Tạo group cho biểu đồ con
+          const gChart = svg
+            .append("g")
+            .attr("transform", `translate(0, ${topY})`)
+            .attr("class", "facet");
+
+          // Cấu hình trục Y riêng cho biểu đồ này
+          const yScale = d3
+            .scaleLinear()
+            .domain(config.domain)
+            .range([chartHeight, 0]);
+
+          // Vẽ lưới ngang (Gridlines)
+          gChart
+            .append("g")
+            .attr("class", "grid")
+            .call(d3.axisLeft(yScale).tickSize(-mainWidth).tickFormat(""));
+
+          // Vẽ trục Y
+          gChart
+            .append("g")
+            .attr("class", "axis")
+            .call(d3.axisLeft(yScale).ticks(5));
+
+          // Vẽ trục X
+          const xAxis = d3
+            .axisBottom(xScale)
+            .tickValues(timePoints)
+            .tickFormat((d, i) => timeLabels[i] || "");
+
+          if (index === numCharts - 1) {
+            // Chỉ hiển thị nhãn trục X ở biểu đồ cuối cùng
+            gChart
+              .append("g")
+              .attr("class", "axis")
+              .attr("transform", `translate(0, ${chartHeight})`)
+              .call(xAxis)
+              .selectAll("text")
+              .attr("transform", "rotate(-45)")
+              .attr("text-anchor", "end")
+              .attr("dy", "0.5em");
+          } else {
+            // Các biểu đồ trên chỉ vẽ đường thẳng
+            gChart
+              .append("g")
+              .attr("class", "axis")
+              .attr("transform", `translate(0, ${chartHeight})`)
+              .call(xAxis.tickFormat(""))
+              .selectAll(".tick text")
+              .style("display", "none");
+          }
+
+          // Nhãn trục Y bên trái
+          gChart
+            .append("text")
+            .attr("class", "axis-label")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -65)
+            .attr("x", -chartHeight / 2)
+            .attr("text-anchor", "middle")
+            .text(config.label);
+
+          // Nhãn tiêu đề facet
+          gChart
+            .append("text")
+            .attr("class", "facet-title")
+            .attr("x", mainWidth / 2)
+            .attr("y", -8)
+            .attr("text-anchor", "middle")
+            .text(config.label);
+
+          // Hàm tạo đường line
+          const lineGenerator = d3
+            .line()
+            .defined((d) => !isNaN(d[config.key]) && d[config.key] !== null)
+            .x((d) => xScale(d.year * 12 + d.month))
+            .y((d) => yScale(d[config.key]))
+            .curve(d3.curveMonotoneX);
+
+          // Nhóm dữ liệu theo terrainGroup
+          const terrainGroups = d3.group(data, (d) => d.terrainGroup);
+
+          // Vẽ line cho mỗi terrain
+          terrainGroups.forEach((terrainData, terrainName) => {
+            const lineGroup = gChart
+              .append("g")
+              .attr(
+                "class",
+                `terrain-group-${terrainName.replace(/\s+/g, "-")}`,
+              )
+              .attr("data-terrain", terrainName);
+
+            // Vẽ đường line
+            lineGroup
+              .append("path")
+              .datum(
+                terrainData.sort(
+                  (a, b) => a.year * 12 + a.month - (b.year * 12 + b.month),
+                ),
+              )
+              .attr("class", "line")
+              .attr("d", lineGenerator)
+              .attr("stroke", colorScale(terrainName))
+              .attr("data-terrain", terrainName);
+
+            // Vẽ circle markers
+            lineGroup
+              .selectAll(".circle-marker")
+              .data(terrainData)
+              .enter()
+              .append("circle")
+              .attr("class", "circle-marker")
+              .attr("cx", (d) => xScale(d.year * 12 + d.month))
+              .attr("cy", (d) => yScale(d[config.key]))
+              .attr("r", 3)
+              .attr("fill", colorScale(terrainName))
+              .attr("stroke", colorScale(terrainName))
+              .attr("data-terrain", terrainName)
+
+              // --- SỰ KIỆN CLICK (HIỆN TOOLTIP ĐỒNG THỜI TRÊN 3 BIỂU ĐỒ) ---
+              .on("click", function (event, d) {
+                // BẮT BUỘC: Đưa dòng này lên đầu tiên để chặn không cho lan truyền sự kiện ra body
+                event.stopPropagation();
+                if (event.stopImmediatePropagation)
+                  event.stopImmediatePropagation();
+
+                const targetTime = d.year * 12 + d.month;
+                const targetTerrain = d.terrainGroup;
+
+                const isSameSelection =
+                  selectedTime === targetTime &&
+                  selectedTerrain === targetTerrain;
+
+                if (isSameSelection) {
+                  resetChartSelection();
+                  return;
+                }
+
+                selectedTime = targetTime;
+                selectedTerrain = targetTerrain;
+
+                const hoverTooltip = document.getElementById("tooltip");
+                if (hoverTooltip) hoverTooltip.style.display = "none";
+                globalSvg.selectAll(".svg-pinned-tooltip").remove();
+
+                globalSvg
+                  .selectAll(".circle-marker")
+                  .attr("class", "circle-marker")
+                  .style("opacity", (circleData) => {
+                    const circleTime = circleData.year * 12 + circleData.month;
+                    return circleTime === targetTime &&
+                      circleData.terrainGroup === targetTerrain
+                      ? 1
+                      : 0.15;
+                  });
+
+                globalSvg
+                  .selectAll(".line")
+                  .attr("class", function () {
+                    const terrain = d3.select(this).attr("data-terrain");
+                    return terrain === targetTerrain ? "line active" : "line";
+                  })
+                  .style("opacity", function () {
+                    const terrain = d3.select(this).attr("data-terrain");
+                    return terrain === targetTerrain ? 1 : 0.15;
+                  });
+
+                chartsConfig.forEach((cfg, index) => {
+                  const topY = index * (chartHeight + gap);
+                  const matchedData = data.find(
+                    (item) =>
+                      item.year * 12 + item.month === targetTime &&
+                      item.terrainGroup === targetTerrain,
+                  );
+
+                  if (matchedData) {
+                    const yScalePrivate = d3
+                      .scaleLinear()
+                      .domain(cfg.domain)
+                      .range([chartHeight, 0]);
+                    const posX = xScale(targetTime);
+                    const posY = yScalePrivate(matchedData[cfg.key]) + topY;
+
+                    const tooltipGroup = globalSvg
+                      .append("g")
+                      .attr("class", "svg-pinned-tooltip")
+                      .attr("transform", `translate(${posX}, ${posY - 15})`)
+                      .style("pointer-events", "none");
+
+                    const textLabel = tooltipGroup
+                      .append("text")
+                      .attr("text-anchor", "middle")
+                      .attr("fill", "#fff")
+                      .style("font-size", "11px")
+                      .style("font-family", "sans-serif")
+                      .attr("y", -5);
+
+                    textLabel
+                      .append("tspan")
+                      .attr("x", 0)
+                      .style("font-weight", "bold")
+                      .attr("fill", "#4dd0e1")
+                      .text(
+                        formatMonthYear(matchedData.year, matchedData.month),
+                      );
+
+                    textLabel
+                      .append("tspan")
+                      .attr("x", 0)
+                      .attr("dy", "14px")
+                      .text(
+                        `${targetTerrain} - ${cfg.metric}: ${matchedData[cfg.key].toFixed(2)}`,
+                      );
+
+                    const bbox = textLabel.node().getBBox();
+
+                    tooltipGroup
+                      .insert("rect", "text")
+                      .attr("x", bbox.x - 8)
+                      .attr("y", bbox.y - 6)
+                      .attr("width", bbox.width + 16)
+                      .attr("height", bbox.height + 12)
+                      .attr("rx", 5)
+                      .attr("fill", "rgba(0, 0, 0, 0.85)")
+                      .attr("stroke", colorScale(targetTerrain))
+                      .attr("stroke-width", 1);
+                  }
+                });
+              })
+
+              // --- SỰ KIỆN DI CHUỘT VÀO (MOUSEENTER) ---
+              .on("mouseenter", function (event, d) {
+                if (selectedTime !== null) return; // Nếu đang có điểm được click ghim tooltip, khóa hiệu ứng hover
+
+                const terrain = d.terrainGroup;
+
+                globalSvg.selectAll(".line").attr("class", function () {
+                  const currentTerrain = d3.select(this).attr("data-terrain");
+                  return currentTerrain === terrain
+                    ? "line active"
+                    : "line inactive";
+                });
+                globalSvg
+                  .selectAll(".circle-marker")
+                  .attr("class", function () {
+                    const currentTerrain = d3.select(this).attr("data-terrain");
+                    return currentTerrain === terrain
+                      ? "circle-marker"
+                      : "circle-marker inactive";
+                  });
+
+                // Hiển thị tooltip HTML chạy theo chuột bình thường khi hover
+                const tooltip = document.getElementById("tooltip");
+                document.getElementById("tooltip-title").textContent =
+                  formatMonthYear(d.year, d.month);
+                document.getElementById("tooltip-content").innerHTML =
+                  `<strong>${terrain}</strong><br/>${config.metric}: ${d[config.key].toFixed(2)}`;
+                tooltip.style.display = "block";
+                tooltip.style.left = event.pageX + 10 + "px";
+                tooltip.style.top = event.pageY - 30 + "px";
+
+                d3.select(this).transition().duration(100).attr("r", 6);
+              })
+
+              // --- SỰ KIỆN DI CHUYỂN CHUỘT (MOUSEMOVE) ---
+              .on("mousemove", function (event) {
+                if (selectedTime !== null) return;
+                const tooltip = document.getElementById("tooltip");
+                tooltip.style.left = event.pageX + 10 + "px";
+                tooltip.style.top = event.pageY - 30 + "px";
+              })
+
+              // --- SỰ KIỆN RỜI CHUỘT RA NGOÀI (MOUSELEAVE) ---
+              .on("mouseleave", function () {
+                if (selectedTime !== null) {
+                  d3.select(this).transition().duration(100).attr("r", 3);
+                  return;
+                }
+
+                globalSvg.selectAll(".line").attr("class", "line");
+                globalSvg
+                  .selectAll(".circle-marker")
+                  .attr("class", "circle-marker");
+                document.getElementById("tooltip").style.display = "none";
+                d3.select(this).transition().duration(100).attr("r", 3);
+              });
+          });
+
+          // Hover effect cho line paths
+          gChart
+            .selectAll(".line")
+            .on("mouseenter", function () {
+              if (selectedTime !== null) return; // Khi đã chọn 1 điểm, tạm thời khóa hover line
+              const terrain = d3.select(this).attr("data-terrain");
+
+              globalSvg.selectAll(".line").attr("class", function () {
+                const currentTerrain = d3.select(this).attr("data-terrain");
+                return currentTerrain === terrain
+                  ? "line active"
+                  : "line inactive";
+              });
+
+              globalSvg.selectAll(".circle-marker").attr("class", function () {
+                const currentTerrain = d3.select(this).attr("data-terrain");
+                return currentTerrain === terrain
+                  ? "circle-marker"
+                  : "circle-marker inactive";
+              });
+            })
+            .on("mouseleave", function () {
+              if (selectedTime !== null) return; // Khi đã chọn 1 điểm, tạm thời khóa hover line
+              globalSvg.selectAll(".line").attr("class", "line");
+              globalSvg
+                .selectAll(".circle-marker")
+                .attr("class", "circle-marker");
+            });
+        });
+
+        console.log("✅ Biểu đồ được render thành công!");
+      }
+
+      // =====================
+      // BIỂU ĐỒ 100% HORIZONTAL STACKED (Task 5)
+      // =====================
+      // Hàm giúp áp filter trạng thái thời tiết lên Line Chart phía trên
+      function applyWeatherFilterToLineCharts(conditionOrSet) {
+        // conditionOrSet: null => reset; string => single condition; Set => multiple conditions
+        const raw = window.__rawCsv;
+        if (!raw) return;
+
+        const chartDataFiltered = buildLineChartData(raw, conditionOrSet);
+
+        resetChartSelection();
+
+        // Gọi lại renderChart với dữ liệu đã được lọc theo weather condition
+        renderChart(chartDataFiltered);
+        applyTerrainFilterToLineCharts(selectedTerrainFilter);
+      }
+      // Hàm vẽ biểu đồ 100% stacked horizontal cho Task 5. Sử dụng D3 v7.
+      // Biến cấu hình tên cột (dễ chỉnh nếu cần)
+      const regionGroupColumn = "terrainGroup"; // Nếu muốn dùng tên cột khác, chỉnh ở đây
+      const weatherColumn = "Day.Condition.Text"; // Tên cột trạng thái thời tiết trong CSV
+
+      // Bản dịch trạng thái thời tiết sang tiếng Việt (dễ chỉnh)
+      const weatherTranslations = {
+        Sunny: "Nắng",
+        Cloudy: "Âm u",
+        "Heavy rain": "Mưa to",
+        "Light rain": "Mưa nhẹ",
+        "Fog/Mist": "Sương mù / sương sớm",
+        Thunderstorm: "Giông bão",
+      };
+
+      function translateWeather(cond) {
+        return weatherTranslations[cond] || cond || "Không xác định";
+      }
+
+      function renderHorizontalStackedWeatherChart(rawData) {
+        // Chuyển rawData thành mảng có 2 trường: group và weather
+        const transformed = rawData.map((d) => {
+          let group = createTerrainGroup(d["Location.Terrain"] || "");
+          let w = (d[weatherColumn] || "").toString().trim();
+          return {
+            group: group || "Không xác định",
+            weather: w && w.length ? w : "Không xác định",
+          };
+        });
+
+        // Lấy danh sách nhóm khu vực có sẵn (chỉ 2 nhóm theo đề bài)
+        const groups = Array.from(new Set(transformed.map((d) => d.group)));
+
+        // Lấy danh sách trạng thái thời tiết duy nhất
+        let weatherStates = Array.from(
+          new Set(transformed.map((d) => d.weather)),
+        );
+        weatherStates.sort();
+
+        // Hàm tính số lần xuất hiện theo nhóm và trạng thái
+        function computeCounts(statesToConsider) {
+          let counts = {};
+          groups.forEach((g) => (counts[g] = {}));
+          transformed.forEach((d) => {
+            if (!statesToConsider || statesToConsider.has(d.weather)) {
+              counts[d.group][d.weather] =
+                (counts[d.group][d.weather] || 0) + 1;
+            }
+          });
+          // Đảm bảo có key cho tất cả statesToConsider trong từng nhóm
+          const keys = Array.from(statesToConsider || new Set(weatherStates));
+          groups.forEach((g) => {
+            keys.forEach((k) => {
+              counts[g][k] = counts[g][k] || 0;
+            });
+          });
+          return counts;
+        }
+
+        // Hàm dựng dữ liệu cho stack (tính phần trăm nội bộ theo nhóm, tổng 100%)
+        function buildStackData(counts, keys) {
+          // Đối với mỗi nhóm, lấy tổng của các state đang xét và chuẩn hóa về %
+          return groups.map((g) => {
+            const obj = { group: g };
+            const total = keys.reduce((s, k) => s + (counts[g][k] || 0), 0);
+            keys.forEach((k) => {
+              obj[k] = total > 0 ? (counts[g][k] / total) * 100 : 0;
+              // keep raw count too for tooltip
+              obj[`${k}__count`] = counts[g][k] || 0;
+            });
+            return obj;
+          });
+        }
+
+        // Vẽ / cập nhật chart
+        const container = document.getElementById("hsw-chart");
+        const legendContainer = d3.select("#hsw-legend");
+        let svg = null;
+        let g = null;
+
+        // Color scale cho các trạng thái thời tiết
+        const color = d3
+          .scaleOrdinal()
+          .domain(weatherStates)
+          .range(d3.schemeCategory10);
+
+        function syncStackedBarStyles(hoverKey = null) {
+          if (!g) return;
+
+          const hasActiveFilter = selectedWeatherConditions.size > 0;
+          const hasHoverPreview = !hasActiveFilter && hoverKey !== null;
+
+          g.selectAll(".hsw-seg")
+            .style("opacity", function () {
+              const key = d3.select(this).attr("data-key");
+              if (hasActiveFilter) {
+                return selectedWeatherConditions.has(key) ? 1 : 0.15;
+              }
+
+              if (hasHoverPreview) {
+                return key === hoverKey ? 1 : 0.25;
+              }
+
+              return 1;
+            })
+            .attr("stroke", function () {
+              const key = d3.select(this).attr("data-key");
+              if (hasActiveFilter) {
+                return selectedWeatherConditions.has(key) ? "#222" : "none";
+              }
+              return "none";
+            })
+            .attr("stroke-width", function () {
+              const key = d3.select(this).attr("data-key");
+              if (hasActiveFilter) {
+                return selectedWeatherConditions.has(key) ? 1 : 0;
+              }
+              return 0;
+            });
+
+          legendContainer
+            .selectAll("div.hsw-legend-item")
+            .classed("active", (d) =>
+              selectedWeatherConditions.size > 0
+                ? selectedWeatherConditions.has(d)
+                : false,
+            )
+            .style("opacity", (d) =>
+              selectedWeatherConditions.size > 0
+                ? selectedWeatherConditions.has(d)
+                  ? 1
+                  : 0.45
+                : 1,
+            );
+        }
+
+        // Hàm render nội bộ để dùng khi cập nhật filter/resize
+        function updateChart() {
+          // Luôn dựng stack với tất cả các trạng thái (không lọc dữ liệu của stacked bar)
+          const activeKeys = weatherStates.slice();
+          const counts = computeCounts(null); // null => tính cho tất cả
+          const stackData = buildStackData(counts, activeKeys);
+
+          // Kích thước responsive
+          const width = container.clientWidth || 800;
+          const margin = { top: 20, right: 20, bottom: 30, left: 140 };
+          const innerWidth = Math.max(300, width - margin.left - margin.right);
+          const barHeight = 40;
+          const height = groups.length * barHeight + margin.top + margin.bottom;
+
+          // Xóa svg cũ
+          d3.select(container).selectAll("svg").remove();
+
+          svg = d3
+            .select(container)
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .style("display", "block")
+            .style("margin", "0 auto");
+
+          g = svg
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+          const x = d3.scaleLinear().domain([0, 100]).range([0, innerWidth]);
+          const y = d3
+            .scaleBand()
+            .domain(groups)
+            .range([0, groups.length * barHeight])
+            .padding(0.25);
+
+          // Stack
+          const stackGen = d3.stack().keys(activeKeys);
+          const series = stackGen(stackData);
+
+          // Draw groups
+          const groupG = g
+            .selectAll("g.group-row")
+            .data(stackData)
+            .enter()
+            .append("g")
+            .attr("class", "group-row")
+            .attr("transform", (d) => `translate(0, ${y(d.group)})`);
+
+          // For each series (state) draw rects with transition
+          series.forEach((s, i) => {
+            g.selectAll(`.seg-${i}`)
+              .data(s)
+              .enter()
+              .append("rect")
+              .attr("class", `hsw-seg seg-${i}`)
+              .attr("x", (d) => x(d[0]))
+              .attr("y", (d) => y(d.data.group))
+              .attr("height", y.bandwidth())
+              // bắt đầu với width = 0 để có transition mượt
+              .attr("width", 0)
+              .attr("fill", color(s.key))
+              .attr("data-key", s.key)
+              .attr("data-group", (d) => d.data.group)
+              .transition()
+              .duration(600)
+              .attr("x", (d) => x(d[0]))
+              .attr("width", (d) => Math.max(0.5, x(d[1]) - x(d[0])));
+
+            // Gán handlers sau khi tạo phần tử
+            g.selectAll(`.seg-${i}`)
+              .on("mouseenter", function (event, d) {
+                syncStackedBarStyles(s.key);
+
+                // Tooltip
+                const tooltip = document.getElementById("tooltip");
+                tooltip.style.display = "block";
+                const count = d.data[`${s.key}__count`];
+                const pct = d.data[s.key].toFixed(2);
+                document.getElementById("tooltip-title").textContent =
+                  `${d.data.group} - ${translateWeather(s.key)}`;
+                document.getElementById("tooltip-content").innerHTML =
+                  `Số lần: <strong>${count}</strong><br/>Tỷ lệ: <strong>${pct}%</strong>`;
+                tooltip.style.left = event.pageX + 12 + "px";
+                tooltip.style.top = event.pageY - 28 + "px";
+              })
+              .on("mousemove", function (event) {
+                const tooltip = document.getElementById("tooltip");
+                tooltip.style.left = event.pageX + 12 + "px";
+                tooltip.style.top = event.pageY - 28 + "px";
+              })
+              .on("click", function (event, d) {
+                // Click segment => toggle trạng thái trong selectedWeatherConditions (multi-select)
+                const key = s.key;
+                if (selectedWeatherConditions.has(key))
+                  selectedWeatherConditions.delete(key);
+                else selectedWeatherConditions.add(key);
+
+                // Hiển thị tooltip cho phần được click (giống hover nhưng cố định)
+                const tooltip = document.getElementById("tooltip");
+                const count = d.data[`${s.key}__count`];
+                const pct = d.data[s.key].toFixed(2);
+                document.getElementById("tooltip-title").textContent =
+                  `${translateWeather(d.data.group)} - ${translateWeather(s.key)}`;
+                document.getElementById("tooltip-content").innerHTML =
+                  `Số lần: <strong>${count}</strong><br/>Tỷ lệ: <strong>${pct}%</strong>`;
+                tooltip.style.display = "block";
+                tooltip.style.left = event.pageX + 12 + "px";
+                tooltip.style.top = event.pageY - 28 + "px";
+
+                syncStackedBarStyles();
+
+                // Áp filter lên line charts (null => reset)
+                applyWeatherFilterToLineCharts(
+                  selectedWeatherConditions.size
+                    ? selectedWeatherConditions
+                    : null,
+                );
+              })
+              .on("mouseleave", function () {
+                const tooltip = document.getElementById("tooltip");
+                tooltip.style.display = "none";
+                syncStackedBarStyles();
+              });
+          });
+
+          syncStackedBarStyles();
+
+          // Y Axis (group labels)
+          g.append("g")
+            .call(d3.axisLeft(y).tickSize(0))
+            .selectAll("text")
+            .style("font-weight", 600);
+
+          // X Axis (percentage)
+          g.append("g")
+            .attr("transform", `translate(0, ${groups.length * barHeight})`)
+            .call(
+              d3
+                .axisBottom(x)
+                .ticks(5)
+                .tickFormat((d) => d + "%"),
+            );
+
+          // Legend (hiển thị swatch màu tương ứng, tương tác click để filter)
+          legendContainer.html("");
+          const legend = legendContainer
+            .selectAll("div.hsw-legend-item")
+            .data(weatherStates)
+            .enter()
+            .append("div")
+            .attr("class", "hsw-legend-item")
+            .style("display", "inline-flex")
+            .style("align-items", "center")
+            .style("gap", "6px")
+            .style("margin", "4px")
+            .style("padding", "6px 8px")
+            .style("border-radius", "6px")
+            .style("border", "1px solid rgba(0,0,0,0.06)")
+            .style("cursor", "pointer")
+            .on("click", function (event, d) {
+              // Toggle selection of this weather state in the global multi-select set
+              if (selectedWeatherConditions.has(d))
+                selectedWeatherConditions.delete(d);
+              else selectedWeatherConditions.add(d);
+
+              syncStackedBarStyles();
+
+              // Update chart and line charts
+              applyWeatherFilterToLineCharts(
+                selectedWeatherConditions.size
+                  ? selectedWeatherConditions
+                  : null,
+              );
+            })
+            .on("mouseenter", function (event, d) {
+              syncStackedBarStyles(d);
+            })
+            .on("mouseleave", function () {
+              syncStackedBarStyles();
+            });
+
+          // Thêm swatch và label vào mỗi legend item
+          legend
+            .append("span")
+            .style("width", "14px")
+            .style("height", "14px")
+            .style("display", "inline-block")
+            .style("border-radius", "3px")
+            .style("background-color", (d) => color(d));
+          legend
+            .append("span")
+            .text((d) => translateWeather(d))
+            .style("margin-left", "6px")
+            .style("font-size", "13px");
+
+          syncStackedBarStyles();
+        }
+
+        // Initial render
+        updateChart();
+
+        // Responsive: redraw on resize (debounced)
+        let resizeTimeout = null;
+        window.addEventListener("resize", () => {
+          if (resizeTimeout) clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(() => {
+            updateChart();
+          }, 200);
+        });
+      }
+
+      // Gọi hàm vẽ biểu đồ Horizontal Stacked Weather sử dụng rawData đã load
+      // (Không nhóm lại từ đầu nếu đã có biến nhóm; ở đây dùng createTerrainGroup)
+      // Gọi ở đây sau khi dữ liệu gốc đã được tải.
+      // Nếu rawData không tồn tại trong scope, ta sẽ không làm gì.
+      try {
+        if (typeof rawData !== "undefined") {
+          renderHorizontalStackedWeatherChart(rawData);
+        } else if (typeof d3 !== "undefined") {
+          // Nếu rawData không khả dụng (không trong cùng scope), tải lại CSV ngắn gọn
+          d3.csv(
+            "./weather-data-analysis-visualization-d3/data/df_weather_fixed_utf8(Cleaned).csv",
+          ).then((rd) => {
+            renderHorizontalStackedWeatherChart(rd);
+          });
+        }
+      } catch (e) {
+        console.warn("Không thể render biểu đồ ngang stacked weather:", e);
+      }
+
+      // Reset khi click ra ngoài chart (dùng document capture để tránh xung đột bubbling)
+      document.addEventListener(
+        "click",
+        (event) => {
+          const clickedInsideLineChart = event.target.closest(".facet");
+          const clickedLineChartElement = event.target.closest(
+            ".line, .circle-marker, .svg-pinned-tooltip",
+          );
+
+          if (!clickedInsideLineChart && !clickedLineChartElement) {
+            resetLineChartOnlySelection();
+          }
+        },
+        true,
+      );
+
+      // Xử lý filter
+      document.querySelectorAll(".filter-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const filter = this.dataset.filter;
+          selectedTerrainFilter = filter;
+          document
+            .querySelectorAll(".filter-btn")
+            .forEach((b) => b.classList.remove("active"));
+          this.classList.add("active");
+
+          applyTerrainFilterToLineCharts(filter);
+        });
+      });
+    </script>
+  </body>
+</html>
