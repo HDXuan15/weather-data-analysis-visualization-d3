@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Task 1 - Nhiệt độ trung bình theo thời gian</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .chart-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 10px 16px;
+        background: #6b21a8;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background 200ms ease;
+      }
+      .back-link:hover {
+        background: #115e59;
+      }
+      .chart-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 18px 0 18px;
+        align-items: center;
+      }
+      .filter-select {
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 8px;
+        padding: 10px 16px;
+        background: rgba(255, 255, 255, 0.92);
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+      }
+      .summary-box {
+        margin-bottom: 20px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid var(--surface-border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        font-size: 15px;
+        color: var(--ink);
+        line-height: 1.6;
+      }
+      .line {
+        fill: none;
+        stroke: #8b5cf6;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .dot {
+        fill: #8b5cf6;
+        stroke: #fff;
+        stroke-width: 2;
+        cursor: pointer;
+        transition: all 120ms ease;
+      }
+      .dot:hover {
+        stroke: #0f172a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chart-container">
+      <a href="index.html" class="back-link">← Quay lại trang chủ</a>
+      
+      <h1>Sự thay đổi của nhiệt độ trung bình ngày theo thời gian</h1>
+      
+      <div class="chart-controls">
+        <label for="region-filter" style="font-weight: 600; color: #334155;">Lọc theo vùng (Region):</label>
+        <select id="region-filter" class="filter-select">
+          <option value="All">Tất cả các vùng</option>
+        </select>
+      </div>
+
+      <div id="summary-box" class="summary-box"></div>
+
+      <div class="chart-card chart-card--wide">
+        <svg id="chart1" style="max-width: 100%; height: auto"></svg>
+      </div>
+    </div>
+
+    <div id="tooltip"></div>
+
+    <script src="task1.js"></script>
+  </body>
+</html>

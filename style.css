@@ -1,3 +1,62 @@
+/* style.css - Basic layout for D3.js weather visualization project
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f5f7fa;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  background: #1976d2;
+  color: #fff;
+  padding: 24px 0 16px 0;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 32px auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+  padding: 32px 24px;
+}
+
+h1,
+h2 {
+  font-weight: 600;
+}
+
+.chart {
+  margin: 32px 0;
+  padding: 16px;
+  background: #f0f4f8;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* Tooltip style 
+.tooltip {
+  position: absolute;
+  background: rgba(25, 118, 210, 0.95);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  pointer-events: none;
+  font-size: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+  display: none;
+}
+
+/* Responsive SVG 
+svg {
+  width: 100%;
+  height: auto;
+} 
+*/
+
 :root {
   color-scheme: light;
   --page-bg-1: #eff6ff;
@@ -8,17 +67,14 @@
   --muted: #475569;
   --shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
 }
-
 * {
   box-sizing: border-box;
 }
-
 html,
 body {
   margin: 0;
   min-height: 100%;
 }
-
 body {
   font-family: Arial, Helvetica, sans-serif;
   color: var(--ink);
@@ -35,13 +91,11 @@ body {
     ),
     linear-gradient(135deg, var(--page-bg-1), var(--page-bg-2));
 }
-
 .page-shell {
   width: min(1240px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 28px 0 40px;
 }
-
 .hero {
   margin-bottom: 20px;
   padding: 28px 28px 24px;
@@ -51,7 +105,6 @@ body {
   backdrop-filter: blur(8px);
   box-shadow: var(--shadow);
 }
-
 .eyebrow {
   margin: 0 0 10px;
   color: #0f766e;
@@ -60,13 +113,11 @@ body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
-
 .hero h1 {
   margin: 0;
   font-size: clamp(30px, 4vw, 52px);
   line-height: 1.05;
 }
-
 .hero-copy {
   max-width: 880px;
   margin: 14px 0 0;
@@ -74,13 +125,11 @@ body {
   font-size: 15px;
   line-height: 1.6;
 }
-
 .chart-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 22px;
 }
-
 .chart-card {
   position: relative;
   padding: 14px;
@@ -90,7 +139,6 @@ body {
   box-shadow: var(--shadow);
   overflow: hidden;
 }
-
 .chart-card::before {
   content: "";
   position: absolute;
@@ -102,44 +150,36 @@ body {
   );
   pointer-events: none;
 }
-
 .chart-card--wide {
   min-height: 0;
 }
-
 svg {
   display: block;
   width: 100%;
   height: auto;
 }
-
 svg path,
 svg line {
   stroke: #cbd5e1;
 }
-
 svg text {
   fill: #475569;
   font-size: 12px;
 }
-
 .chart-title {
   fill: #0f172a;
   font-size: 20px;
   font-weight: 700;
 }
-
 .chart-subtitle {
   fill: #64748b;
   font-size: 12px;
 }
-
 .axis-label {
   fill: #334155;
   font-size: 13px;
   font-weight: 700;
 }
-
 #tooltip {
   position: fixed;
   z-index: 20;
@@ -157,41 +197,33 @@ svg text {
   opacity: 0;
   transition: opacity 120ms ease;
 }
-
 rect,
 circle {
   transition: all 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
 @media (min-width: 1100px) {
   .chart-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .chart-card--wide {
     grid-column: 1 / -1;
   }
 }
-
 @media (max-width: 720px) {
   .page-shell {
     width: min(100vw - 20px, 1240px);
     padding-top: 18px;
   }
-
   .hero {
     padding: 22px 18px;
   }
-
   .chart-card {
     padding: 10px;
     border-radius: 18px;
   }
-
   svg text {
     font-size: 11px;
   }
-
   .chart-title {
     font-size: 17px;
   }
