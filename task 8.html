@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /* Outer white container */
+      .container {
+        max-width: 900px;
+        width: 100%;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+      }
+
+      /* Header: colored band at top of the container */
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      /* Content inside the white container */
+      .content {
+        padding: 28px;
+      }
+
+      .chart-wrapper {
+        display: flex;
+        justify-content: center;
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+      }
+
+      svg {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .axis-label {
+        font-size: 14px;
+        font-weight: bold;
+        fill: #2c3e50;
+      }
+
+      .axis-title {
+        font-size: 12px;
+        fill: #555;
+      }
+
+      .grid-line {
+        stroke: #e0e0e0;
+        stroke-dasharray: 4;
+        stroke-width: 0.8;
+        opacity: 0.6;
+      }
+
+      .box {
+        stroke: #2c3e50;
+        stroke-width: 2;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+
+      .box:hover {
+        opacity: 1;
+      }
+
+      .whisker {
+        stroke: #2c3e50;
+        stroke-width: 2;
+      }
+
+      .whisker-end {
+        stroke: #2c3e50;
+        stroke-width: 2;
+      }
+
+      .median {
+        stroke: white;
+        stroke-width: 3;
+      }
+
+      .outlier:hover {
+        stroke-width: 2.5;
+        filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.4));
+      }
+
+      .tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 10px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        pointer-events: none;
+        z-index: 1000;
+        max-width: 280px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        line-height: 1.6;
+      }
+
+      .tooltip-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        padding-bottom: 5px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+        font-size: 13px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .legend-item:hover {
+        background-color: #e8f0f8;
+      }
+
+      .legend-item.disabled {
+        opacity: 0.5;
+      }
+
+      .legend-item.filtered {
+        background-color: #d0e8ff !important;
+        font-weight: bold;
+        box-shadow: inset 0 0 0 2px #3498db;
+      }
+
+      .legend-item.reset-btn {
+        background-color: #e8e8e8 !important;
+        color: #666;
+      }
+
+      .legend-item.reset-btn:hover {
+        background-color: #d8d8d8 !important;
+      }
+
+      .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 2px;
+        border: 1px solid #2c3e50;
+      }
+
+      .info-section {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f0f4f8;
+        border-left: 4px solid #3498db;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #555;
+        line-height: 1.6;
+      }
+
+      .loading {
+        text-align: center;
+        font-size: 16px;
+        color: #7f8c8d;
+        padding: 40px;
+      }
+
+      .error {
+        background: #ffe0e0;
+        color: #c0392b;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        border-left: 4px solid #c0392b;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 20px;
+        }
+
+        .title {
+          font-size: 22px;
+        }
+
+        .chart-wrapper {
+          padding: 10px;
+        }
+
+        .legend {
+          gap: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <div class="header">
+        <h1>Phân bố nhiệt độ trung bình ngày theo trạng thái thời tiết</h1>
+      </div>
+      <div class="container">
+        <div id="error-container"></div>
+        <div id="loading" class="loading">Đang tải dữ liệu...</div>
+        <div class="chart-wrapper">
+          <svg id="chart"></svg>
+        </div>
+        <div id="legend" class="legend"></div>
+        <div class="info-section">
+          <strong id="guide-title">Hướng dẫn đọc biểu đồ:</strong>
+          <div style="margin-top: 8px">
+            <div style="margin-left: 12px">
+              • Hộp (Box): từ Q1 đến Q3 (chứa 50% dữ liệu) <br />
+              • Đường giữa: Median (giá trị trung vị) <br />
+              • Dây (Whisker): khoảng min-max hợp lệ <br />
+              • Điểm tròn: Outliers (giá trị ngoại lệ)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tooltip" class="tooltip" style="display: none"></div>
+
+    <script>
+      // ============================================
+      // 1. SETUP & CONFIGURATION
+      // ============================================
+
+      // Kích thước biểu đồ
+      const svgWidth = 700;
+      const svgHeight = 500;
+      const margin = { top: 40, right: 30, bottom: 100, left: 70 };
+      const chartWidth = svgWidth - margin.left - margin.right;
+      const chartHeight = svgHeight - margin.top - margin.bottom;
+
+      // Bảng màu cho từng trạng thái thời tiết
+      const colorScale = d3.scaleOrdinal(d3.schemeDark2);
+
+      // Tooltip element
+      const tooltip = d3.select("#tooltip");
+
+      // Bản dịch tên thời tiết sang tiếng Việt
+      const weatherTranslations = {
+        Sunny: "Nắng",
+        Cloudy: "Âm u",
+        "Heavy rain": "Mưa to",
+        "Light rain": "Mưa nhẹ",
+        "Fog/Mist": "Sương mù / sương sớm",
+        Thunderstorm: "Giông bão",
+      };
+
+      /**
+       * Chuyển đổi tên thời tiết sang tiếng Việt
+       */
+      function translateWeather(condition) {
+        return weatherTranslations[condition] || condition;
+      }
+
+      // ============================================
+      // 2. HỖ TRỢ TÍNH TOÁN
+      // ============================================
+
+      /**
+       * Tính toán các tứ phân vị (quartiles)
+       */
+      function quartile(sorted, p) {
+        const index = p * (sorted.length - 1);
+        const lower = Math.floor(index);
+        const upper = Math.ceil(index);
+        const weight = index % 1;
+
+        if (lower === upper) return sorted[lower];
+        return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+      }
+
+      /**
+       * Tính toán thống kê cho box plot
+       * Input: mảng các giá trị nhiệt độ
+       * Output: object chứa min, Q1, median, Q3, max, whiskers, outliers
+       */
+      function calculateBoxPlotStats(values) {
+        if (values.length === 0) return null;
+
+        const sorted = values.slice().sort((a, b) => a - b);
+        const q1 = quartile(sorted, 0.25);
+        const median = quartile(sorted, 0.5);
+        const q3 = quartile(sorted, 0.75);
+        const iqr = q3 - q1;
+
+        // Tính whiskers
+        const lowerBound = q1 - 1.5 * iqr;
+        const upperBound = q3 + 1.5 * iqr;
+
+        const whiskerLower = d3.min(sorted.filter((d) => d >= lowerBound));
+        const whiskerUpper = d3.max(sorted.filter((d) => d <= upperBound));
+
+        // Tìm outliers
+        const outliers = sorted.filter(
+          (d) => d < whiskerLower || d > whiskerUpper,
+        );
+
+        return {
+          min: sorted[0],
+          q1: q1,
+          median: median,
+          q3: q3,
+          max: sorted[sorted.length - 1],
+          whiskerLower: whiskerLower !== undefined ? whiskerLower : sorted[0],
+          whiskerUpper:
+            whiskerUpper !== undefined
+              ? whiskerUpper
+              : sorted[sorted.length - 1],
+          outliers: outliers,
+          count: values.length,
+        };
+      }
+
+      // ============================================
+      // 3. TẢI VÀ XỬ LÝ DỮ LIỆU
+      // ============================================
+
+      async function loadAndProcessData() {
+        try {
+          // Giả định file CSV nằm cùng thư mục hoặc đường dẫn tương đối
+          const dataPath =
+            "./weather-data-analysis-visualization-d3/data/df_weather_fixed_utf8(Cleaned).csv";
+
+          // Tải dữ liệu CSV
+          let data = await d3.csv(dataPath);
+
+          // Kiểm tra xem dữ liệu có được tải không
+          if (!data || data.length === 0) {
+            throw new Error(
+              "Không thể tải dữ liệu. Vui lòng kiểm tra đường dẫn file.",
+            );
+          }
+
+          // Xử lý dữ liệu:
+          // 1. Chuyển đổi kiểu dữ liệu
+          // 2. Loại bỏ dữ liệu thiếu
+          // 3. Hỗ trợ nhiều tên cột nhiệt độ
+          const getTempValue = (d) => {
+            return parseFloat(
+              d["Day.Avgtemp C"] ||
+                d["Day.Avgtemp_C"] ||
+                d["Day.AvgtempC"] ||
+                d["Avgtemp_C"],
+            );
+          };
+
+          data = data
+            .map((d) => ({
+              condition: d["Day.Condition.Text"],
+              temp: getTempValue(d),
+            }))
+            .filter((d) => d.condition && !isNaN(d.temp));
+
+          console.log(`Tổng bản ghi sau xử lý: ${data.length}`);
+
+          // Đếm số lần xuất hiện của từng trạng thái thời tiết
+          const conditionCounts = d3.rollup(
+            data,
+            (v) => v.length,
+            (d) => d.condition,
+          );
+
+          // Sắp xếp theo số lần xuất hiện giảm dần và lấy top 6
+          const topConditions = Array.from(conditionCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6)
+            .map((d) => d[0]);
+
+          console.log("Top 6 trạng thái thời tiết:", topConditions);
+
+          // Lọc lại dữ liệu để chỉ giữ top 6 trạng thái
+          data = data.filter((d) => topConditions.includes(d.condition));
+
+          // Nhóm dữ liệu theo trạng thái thời tiết
+          const groupedData = d3.group(data, (d) => d.condition);
+
+          // Tính toán thống kê box plot cho mỗi nhóm
+          const boxPlotData = Array.from(groupedData).map(
+            ([condition, values]) => {
+              const temps = values.map((d) => d.temp);
+              const stats = calculateBoxPlotStats(temps);
+              return {
+                condition: condition,
+                ...stats,
+              };
+            },
+          );
+
+          // Sắp xếp theo thứ tự xuất hiện trong topConditions
+          boxPlotData.sort(
+            (a, b) =>
+              topConditions.indexOf(a.condition) -
+              topConditions.indexOf(b.condition),
+          );
+
+          console.log("Box plot data:", boxPlotData);
+
+          return boxPlotData;
+        } catch (error) {
+          console.error("Lỗi khi tải dữ liệu:", error);
+          const errorContainer = d3.select("#error-container");
+          errorContainer.html(`
+                    <div class="error">
+                        <strong>Lỗi:</strong> ${error.message}<br>
+                        <small>Đảm bảo file CSV nằm ở đường dẫn: ./weather-data-analysis-visualization-d3/data/df_weather_fixed_utf8(Cleaned).csv</small>
+                    </div>
+                `);
+          throw error;
+        }
+      }
+
+      // ============================================
+      // 4. VẼ BIỂU ĐỒ
+      // ============================================
+
+      async function drawChart() {
+        try {
+          d3.select("#loading").style("display", "none");
+
+          // Tải dữ liệu
+          const boxPlotData = await loadAndProcessData();
+
+          if (!boxPlotData || boxPlotData.length === 0) {
+            throw new Error("Không có dữ liệu để vẽ biểu đồ");
+          }
+
+          // Chọn SVG element
+          const svg = d3
+            .select("#chart")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .style("background", "#ffffff");
+
+          // Tạo nhóm chính (g) để chứa biểu đồ
+          const g = svg
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+          // ============================================
+          // 5. THIẾT LẬP CÁC TRỤC
+          // ============================================
+
+          // Tìm giá trị min/max của nhiệt độ để set scale Y
+          const tempMin = d3.min(boxPlotData, (d) => d.whiskerLower);
+          const tempMax = d3.max(boxPlotData, (d) => d.whiskerUpper);
+          const tempRange = tempMax - tempMin;
+          const yPadding = tempRange * 0.2;
+
+          // Scale Y: nhiệt độ
+          const yScale = d3
+            .scaleLinear()
+            .domain([tempMin - yPadding, tempMax + yPadding])
+            .range([chartHeight, 0]);
+
+          // Scale X: trạng thái thời tiết (sẽ được cập nhật động)
+          let xScale = d3
+            .scaleBand()
+            .domain(boxPlotData.map((d) => d.condition))
+            .range([0, chartWidth])
+            .padding(0.3);
+
+          // Tạo trục Y
+          const yAxis = d3
+            .axisLeft(yScale)
+            .tickFormat((d) => d.toFixed(0) + "°");
+
+          // Tạo trục X (sẽ được cập nhật động)
+          let xAxis = d3
+            .axisBottom(xScale)
+            .tickFormat((d) => translateWeather(d));
+
+          // Vẽ trục Y
+          g.append("g")
+            .attr("class", "y-axis")
+            .call(yAxis)
+            .append("text")
+            .attr("class", "axis-title")
+            .attr("x", -chartHeight / 2)
+            .attr("y", -50)
+            .attr("transform", "rotate(-90)")
+            .attr("text-anchor", "middle")
+            .text("Nhiệt độ trung bình ngày (°C)")
+            .style("fill", "#2c3e50")
+            .style("font-size", "14px")
+            .style("font-weight", "bold");
+
+          // Vẽ trục X
+          const xAxisGroup = g
+            .append("g")
+            .attr("class", "x-axis")
+            .attr("transform", `translate(0,${chartHeight})`)
+            .call(xAxis);
+
+          xAxisGroup
+            .selectAll("text")
+            .attr("transform", "rotate(-25)")
+            .attr("text-anchor", "end")
+            .attr("dx", "-0.5em")
+            .attr("dy", "0.5em")
+            .style("font-size", "12px");
+
+          // Thêm title tooltip cho nhãn trục X
+          xAxisGroup
+            .selectAll("text")
+            .append("title")
+            .text((d) => d);
+
+          // Thêm nhãn trục X
+          g.append("text")
+            .attr("class", "axis-title")
+            .attr("x", chartWidth / 2)
+            .attr("y", chartHeight + 80)
+            .attr("text-anchor", "middle")
+            .text("Trạng thái thời tiết")
+            .style("fill", "#2c3e50")
+            .style("font-size", "14px")
+            .style("font-weight", "bold");
+
+          // ============================================
+          // 6. VẼ GRIDLINE NGANG
+          // ============================================
+
+          g.append("g")
+            .attr("class", "grid")
+            .call(d3.axisLeft(yScale).tickSize(-chartWidth).tickFormat(""))
+            .select(".domain")
+            .remove();
+          g.select(".grid").selectAll("line").attr("class", "grid-line");
+
+          // ============================================
+          // 7. VẼ BOX PLOT
+          // ============================================
+
+          const drawBoxPlots = (data, scale, yScale) => {
+            const boxWidth = scale.bandwidth() * 0.5;
+
+            // Dùng D3 data join với key là condition để xử lý enter/update/exit
+            const conditionGroups = g
+              .selectAll(".boxplot-group")
+              .data(data, (d) => d.condition);
+
+            // EXIT: xóa các group không còn trong dữ liệu
+            conditionGroups.exit().remove();
+
+            // ENTER: tạo các group mới
+            const enterGroups = conditionGroups
+              .enter()
+              .append("g")
+              .attr("class", "boxplot-group")
+              .attr("data-condition", (d) => d.condition);
+
+            // Thêm các element con cho từng group (whiskers, box, median, outliers)
+            // Whisker dưới
+            enterGroups
+              .append("line")
+              .attr("class", "whisker")
+              .attr("stroke", (d) => colorScale(d.condition));
+
+            // Whisker trên
+            enterGroups
+              .append("line")
+              .attr("class", "whisker")
+              .attr("stroke", (d) => colorScale(d.condition));
+
+            // Đầu whisker dưới
+            enterGroups
+              .append("line")
+              .attr("class", "whisker-end")
+              .attr("stroke", (d) => colorScale(d.condition));
+
+            // Đầu whisker trên
+            enterGroups
+              .append("line")
+              .attr("class", "whisker-end")
+              .attr("stroke", (d) => colorScale(d.condition));
+
+            // BOX GROUP
+            const boxGroups = enterGroups
+              .append("g")
+              .attr("class", "box-group")
+              .style("cursor", "pointer");
+
+            boxGroups
+              .append("rect")
+              .attr("class", "box")
+              .attr("fill", (d) => colorScale(d.condition))
+              .attr("opacity", 0.6)
+              .on("mouseover", function () {
+                const condition = d3
+                  .select(this.parentNode.parentNode)
+                  .attr("data-condition");
+                d3.select(this).attr("opacity", 0.95);
+                d3.selectAll(
+                  ".boxplot-group[data-condition='" + condition + "'] .outlier",
+                )
+                  .attr("opacity", 1)
+                  .attr("r", 5.5);
+                // Lấy data từ group parent
+                const groupData = d3.select(this.parentNode.parentNode).datum();
+                showTooltip(groupData, event);
+              })
+              .on("mouseout", function () {
+                const condition = d3
+                  .select(this.parentNode.parentNode)
+                  .attr("data-condition");
+                d3.select(this).attr("opacity", 0.6);
+                d3.selectAll(
+                  ".boxplot-group[data-condition='" + condition + "'] .outlier",
+                )
+                  .attr("opacity", 0.7)
+                  .attr("r", 4);
+                hideTooltip();
+              })
+              .on("mousemove", updateTooltipPosition);
+
+            // MEDIAN LINE
+            boxGroups
+              .append("line")
+              .attr("class", "median")
+              .attr("stroke", (d) => colorScale(d.condition));
+
+            // Hàm thêm outliers (sẽ được gọi riêng cho từng group)
+            enterGroups.each(function (d) {
+              const group = d3.select(this);
+              d.outliers.forEach((outlier) => {
+                group
+                  .append("circle")
+                  .attr("class", "outlier")
+                  .attr("r", 4)
+                  .attr("fill", colorScale(d.condition))
+                  .attr("opacity", 0.7)
+                  .on("mouseover", function () {
+                    d3.select(this).attr("r", 6).attr("opacity", 1);
+                    d3.selectAll(
+                      ".boxplot-group[data-condition='" +
+                        d.condition +
+                        "'] .box",
+                    )
+                      .attr("opacity", 0.95)
+                      .attr("stroke-width", 3);
+                    d3.selectAll(
+                      ".boxplot-group[data-condition='" +
+                        d.condition +
+                        "'] .whisker",
+                    ).attr("stroke-width", 3);
+                    showOutlierTooltip(d.condition, outlier, event);
+                  })
+                  .on("mouseout", function () {
+                    d3.select(this).attr("r", 4).attr("opacity", 0.7);
+                    d3.selectAll(
+                      ".boxplot-group[data-condition='" +
+                        d.condition +
+                        "'] .box",
+                    )
+                      .attr("opacity", 0.6)
+                      .attr("stroke-width", 2);
+                    d3.selectAll(
+                      ".boxplot-group[data-condition='" +
+                        d.condition +
+                        "'] .whisker",
+                    ).attr("stroke-width", 2);
+                    hideTooltip();
+                  })
+                  .on("mousemove", updateTooltipPosition);
+              });
+            });
+
+            // UPDATE + ENTER: cập nhật vị trí và kích thước các element
+            const mergedGroups = conditionGroups.merge(enterGroups);
+
+            mergedGroups.each(function (d) {
+              const x = scale(d.condition) + scale.bandwidth() / 2;
+              const group = d3.select(this);
+
+              // Update Whiskers
+              const whiskers = group.selectAll(".whisker");
+              const whiskerEnds = group.selectAll(".whisker-end");
+              const box = group.select(".box");
+              const median = group.select(".median");
+              const outliers = group.selectAll(".outlier");
+
+              // Update Whisker dưới
+              whiskers.nodes()[0] &&
+                d3
+                  .select(whiskers.nodes()[0])
+                  .transition()
+                  .duration(750)
+                  .attr("x1", x)
+                  .attr("x2", x)
+                  .attr("y1", yScale(d.whiskerLower))
+                  .attr("y2", yScale(d.q1));
+
+              // Update Whisker trên
+              whiskers.nodes()[1] &&
+                d3
+                  .select(whiskers.nodes()[1])
+                  .transition()
+                  .duration(750)
+                  .attr("x1", x)
+                  .attr("x2", x)
+                  .attr("y1", yScale(d.q3))
+                  .attr("y2", yScale(d.whiskerUpper));
+
+              // Update Đầu whisker dưới
+              whiskerEnds.nodes()[0] &&
+                d3
+                  .select(whiskerEnds.nodes()[0])
+                  .transition()
+                  .duration(750)
+                  .attr("x1", x - boxWidth * 0.3)
+                  .attr("x2", x + boxWidth * 0.3)
+                  .attr("y1", yScale(d.whiskerLower))
+                  .attr("y2", yScale(d.whiskerLower));
+
+              // Update Đầu whisker trên
+              whiskerEnds.nodes()[1] &&
+                d3
+                  .select(whiskerEnds.nodes()[1])
+                  .transition()
+                  .duration(750)
+                  .attr("x1", x - boxWidth * 0.3)
+                  .attr("x2", x + boxWidth * 0.3)
+                  .attr("y1", yScale(d.whiskerUpper))
+                  .attr("y2", yScale(d.whiskerUpper));
+
+              // Update Box
+              box
+                .transition()
+                .duration(750)
+                .attr("x", x - boxWidth / 2)
+                .attr("y", yScale(d.q3))
+                .attr("width", boxWidth)
+                .attr("height", yScale(d.q1) - yScale(d.q3));
+
+              // Update Median line
+              median
+                .transition()
+                .duration(750)
+                .attr("x1", x - boxWidth / 2)
+                .attr("x2", x + boxWidth / 2)
+                .attr("y1", yScale(d.median))
+                .attr("y2", yScale(d.median));
+
+              // Update Outliers
+              outliers
+                .transition()
+                .duration(750)
+                .attr("cx", x)
+                .attr("cy", (_, idx) => yScale(d.outliers[idx]));
+            });
+          };
+
+          // Vẽ lần đầu
+          drawBoxPlots(boxPlotData, xScale, yScale);
+
+          // ============================================
+          // 8. THÊM TIÊU ĐỀ
+          // ============================================
+
+          svg
+            .append("text")
+            .attr("x", svgWidth / 2)
+            .attr("y", 25)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "20px")
+            .attr("font-weight", "bold")
+            .attr("fill", "#2c3e50");
+
+          // ============================================
+          // 9. THÊM LEGEND
+          // ============================================
+
+          const legend = d3.select("#legend");
+          let selectedStatuses = new Set();
+
+          /**
+           * Cập nhật biểu đồ khi bộ lọc thay đổi
+           * - Tính toán yScale ĐỘNG dựa trên dữ liệu hiện tại (filtered hoặc full)
+           * - Cập nhật cả trục X và Y
+           */
+          function updateChartVisibility() {
+            const isFiltering = selectedStatuses.size > 0;
+            let dataToShow = isFiltering
+              ? boxPlotData.filter((d) => selectedStatuses.has(d.condition))
+              : boxPlotData;
+
+            // Tính min/max từ dữ liệu hiện tại
+            const allValues = dataToShow.flatMap((d) => [d.min, d.max]);
+            const tempMin = Math.min(...allValues);
+            const tempMax = Math.max(...allValues);
+            const tempRange = tempMax - tempMin;
+            const yPadding = tempRange * 0.2;
+
+            // Tính yScale mới dựa trên dữ liệu hiện tại
+            const newYScale = d3
+              .scaleLinear()
+              .domain([tempMin - yPadding, tempMax + yPadding])
+              .range([chartHeight, 0]);
+
+            // Cập nhật trục Y với yScale mới
+            const newYAxis = d3
+              .axisLeft(newYScale)
+              .tickFormat((d) => d.toFixed(0) + "°");
+            g.select(".y-axis").transition().duration(750).call(newYAxis);
+
+            // Tính toán xScale mới
+            const newXScale = d3
+              .scaleBand()
+              .domain(dataToShow.map((d) => d.condition))
+              .range([0, chartWidth])
+              .padding(0.3);
+
+            // Cập nhật trục X với tickFormat dịch tên thời tiết
+            xAxis = d3
+              .axisBottom(newXScale)
+              .tickFormat((d) => translateWeather(d));
+            g.select(".x-axis").transition().duration(750).call(xAxis);
+
+            // Update style của text
+            g.select(".x-axis")
+              .selectAll("text")
+              .attr("transform", "rotate(-25)")
+              .attr("text-anchor", "end")
+              .attr("dx", "-0.5em")
+              .attr("dy", "0.5em")
+              .style("font-size", "12px");
+
+            // Thêm title tooltip cho nhãn trục X
+            g.select(".x-axis").selectAll("text").selectAll("title").remove();
+            g.select(".x-axis")
+              .selectAll("text")
+              .append("title")
+              .text((d) => d);
+
+            // Vẽ lại box plots với yScale mới
+            g.selectAll(".boxplot-group").remove();
+            drawBoxPlots(dataToShow, newXScale, newYScale);
+          }
+
+          boxPlotData.forEach((d) => {
+            const legendItem = legend
+              .append("div")
+              .attr("class", "legend-item")
+              .attr("data-filter-condition", d.condition)
+              .on("mouseover", function () {
+                if (!selectedStatuses.has(d.condition)) {
+                  d3.selectAll(
+                    ".boxplot-group[data-condition='" + d.condition + "']",
+                  )
+                    .selectAll(
+                      ".box, .whisker, .whisker-end, .outlier, .median",
+                    )
+                    .transition()
+                    .duration(300)
+                    .attr("opacity", 1)
+                    .attr("stroke-width", 3);
+                }
+              })
+              .on("mouseout", function () {
+                if (!selectedStatuses.has(d.condition)) {
+                  d3.selectAll(
+                    ".boxplot-group[data-condition='" + d.condition + "'] .box",
+                  )
+                    .transition()
+                    .duration(300)
+                    .attr("opacity", 0.6);
+                  d3.selectAll(
+                    ".boxplot-group[data-condition='" +
+                      d.condition +
+                      "'] .whisker",
+                  )
+                    .transition()
+                    .duration(300)
+                    .attr("stroke-width", 2)
+                    .attr("opacity", 0.8);
+                  d3.selectAll(
+                    ".boxplot-group[data-condition='" +
+                      d.condition +
+                      "'] .whisker-end",
+                  )
+                    .transition()
+                    .duration(300)
+                    .attr("stroke-width", 2)
+                    .attr("opacity", 0.8);
+
+                  d3.selectAll(
+                    ".boxplot-group[data-condition='" +
+                      d.condition +
+                      "'] .outlier",
+                  )
+                    .transition()
+                    .duration(300)
+                    .attr("opacity", 0.7);
+                  d3.selectAll(
+                    ".boxplot-group[data-condition='" +
+                      d.condition +
+                      "'] .median",
+                  )
+                    .transition()
+                    .duration(300)
+                    .attr("opacity", 1);
+                }
+              })
+              .on("click", function () {
+                if (selectedStatuses.has(d.condition)) {
+                  selectedStatuses.delete(d.condition);
+                  d3.select(this).classed("filtered", false);
+                } else {
+                  selectedStatuses.add(d.condition);
+                  d3.select(this).classed("filtered", true);
+                }
+                updateChartVisibility();
+              });
+
+            legendItem
+              .append("div")
+              .attr("class", "legend-color")
+              .style("background-color", colorScale(d.condition))
+              .style("border-color", colorScale(d.condition));
+
+            legendItem.append("span").text(`${translateWeather(d.condition)}`);
+          });
+
+          // Thêm nút "Tất cả" để reset filter
+          const resetButton = legend
+            .append("div")
+            .attr("class", "legend-item reset-btn")
+            .on("click", function () {
+              selectedStatuses.clear();
+              d3.selectAll(".legend-item").classed("filtered", false);
+              updateChartVisibility();
+            });
+
+          resetButton.append("span").text(" Tất cả");
+
+          // Cập nhật tiêu đề chú thích
+          d3.select("#guide-title").text(`Hướng dẫn đọc biểu đồ:`);
+        } catch (error) {
+          console.error("Lỗi khi vẽ biểu đồ:", error);
+        }
+      }
+
+      // ============================================
+      // 10. TOOLTIP FUNCTIONS
+      // ============================================
+
+      /**
+       * Hiển thị tooltip cho box
+       */
+      function showTooltip(data, event) {
+        const content = `
+                <div class="tooltip-title">${translateWeather(data.condition)}</div>
+                <div><strong>Min:</strong> ${data.min.toFixed(2)}°C</div>
+                <div><strong>Q1:</strong> ${data.q1.toFixed(2)}°C</div>
+                <div><strong>Median:</strong> ${data.median.toFixed(2)}°C</div>
+                <div><strong>Q3:</strong> ${data.q3.toFixed(2)}°C</div>
+                <div><strong>Max:</strong> ${data.max.toFixed(2)}°C</div>
+                <div><strong>Số bản ghi:</strong> ${data.count}</div>
+            `;
+        tooltip.html(content).style("display", "block");
+        updateTooltipPosition(event);
+      }
+
+      /**
+       * Hiển thị tooltip cho outlier
+       */
+      function showOutlierTooltip(condition, value, event) {
+        const content = `
+                <div class="tooltip-title">Outlier</div>
+                <div><strong>Trạng thái:</strong> ${translateWeather(condition)}</div>
+                <div><strong>Nhiệt độ:</strong> ${value.toFixed(2)}°C</div>
+            `;
+        tooltip.html(content).style("display", "block");
+        updateTooltipPosition(event);
+      }
+
+      /**
+       * Cập nhật vị trí tooltip theo vị trí mouse
+       */
+      function updateTooltipPosition(event) {
+        const x = event.pageX + 10;
+        const y = event.pageY + 10;
+        tooltip.style("left", x + "px").style("top", y + "px");
+      }
+
+      /**
+       * Ẩn tooltip
+       */
+      function hideTooltip() {
+        tooltip.style("display", "none");
+      }
+
+      // ============================================
+      // 11. KHỞI ĐỘNG
+      // ============================================
+
+      // Vẽ biểu đồ khi trang tải xong
+      drawChart();
+    </script>
+  </body>
+</html>
