@@ -1,4 +1,4 @@
-d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
+d3.csv("./df_weather_fixed_utf8.csv").then((rawData) => {
   const data = rawData
     .map((row) => ({
       region: row["Location.Region"],

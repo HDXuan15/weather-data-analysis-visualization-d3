@@ -584,9 +584,7 @@
       // LOAD VÀ XỬ LÝ DỮ LIỆU
       // =====================================================
 
-      d3.csv(
-        "./weather-data-analysis-visualization-d3/data/df_weather_fixed_utf8(Cleaned).csv",
-      )
+      d3.csv("./df_weather_fixed_utf8.csv")
         .then((rawData) => {
           console.log(
             "📥 Dữ liệu gốc được tải, tổng cộng:",
@@ -1366,9 +1364,7 @@
           renderHorizontalStackedWeatherChart(rawData);
         } else if (typeof d3 !== "undefined") {
           // Nếu rawData không khả dụng (không trong cùng scope), tải lại CSV ngắn gọn
-          d3.csv(
-            "./weather-data-analysis-visualization-d3/data/df_weather_fixed_utf8(Cleaned).csv",
-          ).then((rd) => {
+          d3.csv("./df_weather_fixed_utf8.csv").then((rd) => {
             renderHorizontalStackedWeatherChart(rd);
           });
         }

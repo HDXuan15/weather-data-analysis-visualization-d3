@@ -364,8 +364,7 @@
       async function loadAndProcessData() {
         try {
           // Giả định file CSV nằm cùng thư mục hoặc đường dẫn tương đối
-          const dataPath =
-            "./weather-data-analysis-visualization-d3/data/df_weather_fixed_utf8(Cleaned).csv";
+          const dataPath = "./df_weather_fixed_utf8.csv";
 
           // Tải dữ liệu CSV
           let data = await d3.csv(dataPath);
@@ -448,7 +447,7 @@
           errorContainer.html(`
                     <div class="error">
                         <strong>Lỗi:</strong> ${error.message}<br>
-                        <small>Đảm bảo file CSV nằm ở đường dẫn: ./weather-data-analysis-visualization-d3/data/df_weather_fixed_utf8(Cleaned).csv</small>
+                        <small>Đảm bảo file CSV nằm ở đường dẫn: ./df_weather_fixed_utf8.csv</small>
                     </div>
                 `);
           throw error;

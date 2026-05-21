@@ -673,13 +673,7 @@
        * Tải dữ liệu từ CSV
        */
       async function loadData() {
-        const possiblePaths = [
-          "./weather-data-analysis-visualization-d3/data/df_weather_fixed_utf8(Cleaned).csv",
-          "weather-data-analysis-visualization-d3/data/df_weather_fixed_utf8(Cleaned).csv",
-          "./data/df_weather_fixed_utf8(Cleaned).csv",
-          "data/df_weather_fixed_utf8(Cleaned).csv",
-          "./df_weather_fixed_utf8(Cleaned).csv",
-        ];
+        const possiblePaths = ["./df_weather_fixed_utf8.csv"];
 
         const requiredColumns = [
           "Date",

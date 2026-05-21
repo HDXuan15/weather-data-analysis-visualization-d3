@@ -1,4 +1,4 @@
-d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
+d3.csv("./df_weather_fixed_utf8.csv").then((rawData) => {
   const parseNumber = (value) => {
     const parsed = Number(String(value).trim().replace(",", "."));
     return Number.isFinite(parsed) ? parsed : NaN;
