@@ -7,43 +7,169 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="style.css" />
     <style>
-      .chart-container {
-        max-width: 1200px;
+      body {
+        margin: 0;
+        font-family:
+          "Inter", "Segoe UI", "SF Pro Text", "Helvetica Neue", sans-serif;
+        background: #f5f7fb;
+        color: #0f172a;
+      }
+      .page-shell {
+        max-width: 1100px;
         margin: 0 auto;
-        padding: 20px;
+        padding: 20px 20px 28px;
       }
       .back-link {
         display: inline-block;
-        margin-bottom: 20px;
-        padding: 10px 16px;
-        background: #134e4a;
+        margin-bottom: 14px;
+        padding: 10px 14px;
+        background: linear-gradient(135deg, #0f766e, #115e59);
         color: white;
         text-decoration: none;
         border-radius: 8px;
         font-size: 14px;
         font-weight: 600;
-        transition: background 200ms ease;
+        transition:
+          transform 200ms ease,
+          box-shadow 200ms ease;
       }
       .back-link:hover {
-        background: #0f3432;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(15, 118, 110, 0.24);
       }
-      circle {
-        transition: all 200ms ease;
+      .chart-card {
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
+        border: 1px solid #e6eaf2;
+        padding: 16px 18px 10px;
+      }
+      .title {
+        margin: 4px 0 4px;
+        font-size: 30px;
+        font-weight: 800;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        text-align: center;
+      }
+      .subtitle {
+        margin: 0 0 16px;
+        font-size: 13px;
+        color: #64748b;
+        text-align: center;
+        font-weight: 600;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .toolbar label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #334155;
+      }
+      #region-filter {
+        appearance: none;
+        padding: 9px 34px 9px 12px;
+        border-radius: 10px;
+        border: 1px solid #d3dbe8;
+        background:
+          linear-gradient(45deg, transparent 50%, #64748b 50%) calc(100% - 16px)
+            calc(1em + 1px) / 6px 6px no-repeat,
+          linear-gradient(135deg, #64748b 50%, transparent 50%)
+            calc(100% - 11px) calc(1em + 1px) / 6px 6px no-repeat,
+          #fff;
+        font-size: 13px;
+        font-weight: 600;
+        color: #0f172a;
         cursor: pointer;
       }
-      circle:hover {
-        filter: brightness(1.2);
-        stroke: #0f172a !important;
-        stroke-width: 2 !important;
+      #analysis-note {
+        font-size: 13px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .legend-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        width: auto;
+      }
+      .legend-item:hover {
+        background: transparent;
+        opacity: 0.75;
+        transform: translateY(-1px);
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+      }
+      #tooltip {
+        position: fixed;
+        pointer-events: none;
+        opacity: 0;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid #cfd9e6;
+        border-radius: 10px;
+        box-shadow: 0 14px 24px rgba(15, 23, 42, 0.2);
+        padding: 10px 11px;
+        min-width: 180px;
+        font-size: 12px;
+        color: #0f172a;
+        line-height: 1.55;
+        font-weight: 600;
+        text-align: left;
+        transition: opacity 140ms ease;
+      }
+      #chart12 {
+        width: 100%;
+        height: auto;
+      }
+      @media (max-width: 900px) {
+        .legend-strip {
+          justify-content: flex-start;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="chart-container">
+    <main class="page-shell">
       <a href="index.html" class="back-link">← Quay lại trang chủ</a>
-      <h1>Ban ngày dài có ảnh hưởng đến UV không?</h1>
-      <svg id="chart12" style="max-width: 100%; height: auto"></svg>
-    </div>
+
+      <section class="chart-card">
+        <h1 class="title">Ban ngày dài có ảnh hưởng đến UV không?</h1>
+        <p class="subtitle">Mối quan hệ giữa độ dài ban ngày và chỉ số UV</p>
+
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <label for="region-filter">Lọc theo vùng:</label>
+            <select id="region-filter"></select>
+          </div>
+          <div id="analysis-note"></div>
+        </div>
+
+        <div id="legend-region" class="legend-strip"></div>
+
+        <svg id="chart12"></svg>
+      </section>
+    </main>
 
     <div id="tooltip"></div>
 

@@ -27,6 +27,72 @@
       .back-link:hover {
         background: #7f1d1d;
       }
+      /* Stat card styles */
+      .stat-card {
+        display: inline-flex;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: linear-gradient(180deg, #ffffff, #fff8f8);
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+        align-items: center;
+      }
+      /* Adopt Task 4 summary-box styling */
+      .summary-box {
+        margin-bottom: 20px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+        font-size: 15px;
+        color: #0f172a;
+        line-height: 1.6;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      .summary-box .stat-item {
+        flex: 1;
+        padding: 12px;
+        border-radius: 12px;
+        background: #fff7f7;
+        border: 1px solid rgba(15, 23, 42, 0.04);
+      }
+      .stat-item {
+        min-width: 220px;
+      }
+      .stat-label {
+        display: block;
+        font-size: 13px;
+        color: #475569;
+      }
+      .stat-value {
+        display: block;
+        font-size: 16px;
+        font-weight: 800;
+        color: #0f172a;
+      }
+      .stat-card .stat-item {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      .stat-card.visible .stat-item {
+        animation: fadeUp 360ms ease forwards;
+      }
+      .stat-card.visible .stat-item:nth-child(1) {
+        animation-delay: 0ms;
+      }
+      .stat-card.visible .stat-item:nth-child(2) {
+        animation-delay: 80ms;
+      }
+      @keyframes fadeUp {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
       .chart-controls {
         display: flex;
         flex-wrap: wrap;
@@ -80,6 +146,7 @@
           Sort Descending
         </button>
       </div>
+      <div id="density-stats" style="margin-top: 10px; font-weight: 700"></div>
       <svg id="chart6" style="max-width: 100%; height: auto"></svg>
     </div>
 

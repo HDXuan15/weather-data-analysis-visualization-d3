@@ -56,7 +56,7 @@
       .card-link {
         display: inline-block;
         padding: 10px 18px;
-        background: linear-gradient(135deg, #0f766e, #0d665a);
+        background: linear-gradient(135deg, #0f766e, #115e59);
         color: white;
         text-decoration: none;
         border-radius: 10px;
@@ -71,24 +71,6 @@
       }
       .card-link:active {
         transform: scale(0.98);
-      }
-      .card-color-purple .card-link {
-        background: linear-gradient(135deg, #6b21a8, #581c87);
-      }
-      .card-color-purple .card-link:hover {
-        box-shadow: 0 8px 16px rgba(107, 33, 168, 0.3);
-      }
-      .card-color-red .card-link {
-        background: linear-gradient(135deg, #991b1b, #7f1d1d);
-      }
-      .card-color-red .card-link:hover {
-        box-shadow: 0 8px 16px rgba(153, 27, 27, 0.3);
-      }
-      .card-color-teal .card-link {
-        background: linear-gradient(135deg, #0f766e, #115e59);
-      }
-      .card-color-teal .card-link:hover {
-        box-shadow: 0 8px 16px rgba(15, 118, 110, 0.3);
       }
     </style>
   </head>
@@ -106,100 +88,88 @@
       </header>
 
       <section class="cards-grid">
+        <!-- Other tasks / placeholders remain after ordered tasks -->
         <article class="card card-color-purple">
           <div class="card-inner">
             <h3>📈 Task 1: Phân bố nhiệt độ theo thời gian</h3>
             <p class="card-desc">
               Line chart thể hiện sự thay đổi của nhiệt độ trung bình ngày theo
-              thời gian. Mỗi điểm trên đường là một quan sát.
+              thời gian.
             </p>
-            <a href="task1.html" class="card-link">Xem biểu đồ →</a>
+            <a href="task1.html" class="card-link">Xem Task 1 →</a>
           </div>
         </article>
-
         <article class="card card-color-purple">
           <div class="card-inner">
             <h3>📊 Task 2: So sánh nhiệt độ</h3>
             <p class="card-desc">
-              Bar chart so sánh nhiệt độ trung bình giữa các vùng với màu tím từ
-              nhạt đến đậm. Mỗi cột là một region khác nhau.
+              Bar chart so sánh nhiệt độ trung bình giữa các vùng.
             </p>
-            <a href="task2.html" class="card-link">Xem biểu đồ →</a>
+            <a href="task2.html" class="card-link">Xem Task 2 →</a>
           </div>
         </article>
-
         <article class="card card-color-teal">
           <div class="card-inner">
             <h3>🗺️ Task 4: Bản đồ nhiệt độ trung bình</h3>
             <p class="card-desc">
-              Choropleth map hiển thị nhiệt độ trung bình theo tỉnh. Màu sắc từ
-              xanh dương (nhiệt độ thấp) đến đỏ (nhiệt độ cao). Tooltip hiển thị
-              tên tỉnh và nhiệt độ khi hover.
+              Choropleth map hiển thị nhiệt độ trung bình theo tỉnh.
             </p>
-            <a href="task4.html" class="card-link">Xem biểu đồ →</a>
+            <a href="task4.html" class="card-link">Xem Task 4 →</a>
           </div>
         </article>
-
-        <article class="card card-color-red">
-          <div class="card-inner">
-            <h3>📈 Task 6: Mật độ điểm đo</h3>
-            <p class="card-desc">
-              Bar chart hiển thị số lượng điểm đo trong mỗi khu vực với màu đỏ
-              từ nhạt đến đậm, phản ánh mật độ dữ liệu.
-            </p>
-            <a href="task6.html" class="card-link">Xem biểu đồ →</a>
-          </div>
-        </article>
-
-        <article class="card card-color-red">
-          <div class="card-inner">
-            <h3>Task 7: Tần suất trạng thái thời tiết</h3>
-            <p class="card-desc"></p>
-            <a href="task7.html" class="card-link">Xem biểu đồ →</a>
-          </div>
-        </article>
-
-        <article class="card card-color-teal">
-          <div class="card-inner">
-            <h3>🌤️ Task 12: UV vs Độ dài ban ngày</h3>
-            <p class="card-desc">
-              Scatter plot khám phá mối liên hệ giữa độ dài ban ngày (tính từ
-              Sunrise-Sunset) và chỉ số UV. Mỗi điểm là một quan sát.
-            </p>
-            <a href="task12.html" class="card-link">Xem biểu đồ →</a>
-          </div>
-        </article>
-
         <article class="card card-color-teal">
           <div class="card-inner">
             <h3>🧩 Task 5: Biểu đồ tổng hợp</h3>
             <p class="card-desc">
-              Dashboard kết hợp line chart, stacked weather chart và các bộ lọc
-              tương tác theo vùng, loại địa hình và trạng thái thời tiết.
+              Dashboard kết hợp line chart, stacked weather chart và bộ lọc
+              tương tác.
             </p>
-            <a href="task 5.html" class="card-link">Mở Task 5 →</a>
+            <a href="task%205.html" class="card-link">Mở Task 5 →</a>
           </div>
         </article>
-
+        <article class="card card-color-red">
+          <div class="card-inner">
+            <h3>📈 Task 6: Mật độ điểm đo</h3>
+            <p class="card-desc">
+              Bar chart hiển thị số lượng điểm đo trong mỗi khu vực.
+            </p>
+            <a href="task6.html" class="card-link">Xem Task 6 →</a>
+          </div>
+        </article>
+        <article class="card card-color-red">
+          <div class="card-inner">
+            <h3>Task 7: Tần suất trạng thái thời tiết</h3>
+            <p class="card-desc">(Placeholder)</p>
+            <a href="task7.html" class="card-link">Xem Task 7 →</a>
+          </div>
+        </article>
         <article class="card card-color-teal">
           <div class="card-inner">
             <h3>🗂️ Task 8: Boxplot theo trạng thái</h3>
             <p class="card-desc">
-              Boxplot phân tích phân bố nhiệt độ theo từng trạng thái thời tiết,
-              có tooltip và bộ lọc chọn nhanh.
+              Boxplot phân tích phân bố nhiệt độ theo từng trạng thái thời tiết.
             </p>
-            <a href="task 8.html" class="card-link">Mở Task 8 →</a>
+            <a href="task%208.html" class="card-link">Mở Task 8 →</a>
           </div>
         </article>
-
         <article class="card card-color-teal">
           <div class="card-inner">
             <h3>📅 Task 11: Phân tích ngày dài</h3>
             <p class="card-desc">
-              Dashboard theo vùng và tỉnh/thành, gồm line chart và heatmap để
-              xem xu hướng độ dài ban ngày theo thời gian.
+              Dashboard gồm line chart và heatmap để xem xu hướng độ dài ban
+              ngày theo thời gian.
             </p>
-            <a href="task 11.html" class="card-link">Mở Task 11 →</a>
+            <a href="task%2011.html" class="card-link">Mở Task 11 →</a>
+          </div>
+        </article>
+        <article class="card card-color-teal">
+          <div class="card-inner">
+            <h3>🌤️ Task 12: UV vs Độ dài ban ngày</h3>
+            <p class="card-desc">
+              Scatter plot khám phá mối liên hệ giữa độ dài ban ngày và chỉ số
+              UV.
+            </p>
+            <a href="task12.html" class="card-link">Xem Task 12 →</a>
           </div>
         </article>
       </section>

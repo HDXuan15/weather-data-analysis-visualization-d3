@@ -14,6 +14,27 @@ d3.csv("./df_weather_fixed_utf8.csv").then((rawData) => {
     .map(([region, count]) => ({ region, count }))
     .sort((a, b) => d3.descending(a.count, b.count));
 
+  // Thống kê: vùng có mật độ điểm đo nhiều nhất và ít nhất
+  if (grouped.length > 0) {
+    const most = grouped[0];
+    const least = grouped[grouped.length - 1];
+    const statsEl = document.getElementById("density-stats");
+    if (statsEl) {
+      statsEl.innerHTML = `
+        <div class="summary-box">
+          <div class="stat-item">
+            <div style="color: #be123c; font-weight: bold; font-size: 13px; text-transform: uppercase;">📈 Mật độ điểm đo nhiều nhất</div>
+            <div id="most-density" style="font-size: 18px; font-weight:700; margin-top:8px;">${most.region} — ${most.count.toLocaleString("vi-VN")}</div>
+          </div>
+          <div class="stat-item">
+            <div style="color: #0369a1; font-weight: bold; font-size: 13px; text-transform: uppercase;">📉 Mật độ điểm đo ít nhất</div>
+            <div id="least-density" style="font-size: 18px; font-weight:700; margin-top:8px;">${least.region} — ${least.count.toLocaleString("vi-VN")}</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
   const svg = d3.select("#chart6");
   const tooltip = d3.select("#tooltip");
   const sortButtons = {

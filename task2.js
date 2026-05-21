@@ -20,6 +20,27 @@ d3.csv("./df_weather_fixed_utf8.csv").then((rawData) => {
     .map(([region, avgTemp]) => ({ region, avgTemp }))
     .sort((a, b) => d3.descending(a.avgTemp, b.avgTemp));
 
+  // Thống kê: vùng có nhiệt độ trung bình cao nhất và thấp nhất
+  if (grouped.length > 0) {
+    const maxRegion = grouped[0];
+    const minRegion = grouped[grouped.length - 1];
+    const statsEl = document.getElementById("stats");
+    if (statsEl) {
+      statsEl.innerHTML = `
+        <div class="summary-box">
+          <div class="stat-item">
+            <div style="color: #be123c; font-weight: bold; font-size: 13px; text-transform: uppercase;">🔥 Nơi có nhiệt độ cao nhất</div>
+            <div id="highest-temp" style="font-size: 18px; font-weight:700; margin-top:8px;">${maxRegion.region} — ${maxRegion.avgTemp.toFixed(2)}°C</div>
+          </div>
+          <div class="stat-item">
+            <div style="color: #0369a1; font-weight: bold; font-size: 13px; text-transform: uppercase;">❄️ Nơi có nhiệt độ thấp nhất</div>
+            <div id="lowest-temp" style="font-size: 18px; font-weight:700; margin-top:8px;">${minRegion.region} — ${minRegion.avgTemp.toFixed(2)}°C</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
   const tooltip = d3.select("#tooltip");
   const sortButtons = {
     ascending: document.getElementById("sort-ascending"),
