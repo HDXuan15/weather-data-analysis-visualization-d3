@@ -78,10 +78,21 @@ d3.csv("./df_weather_fixed_utf8.csv").then((rawData) => {
     .nice()
     .range([innerHeight, 0]);
 
-  const color = d3
+  const tempExtent = d3.extent(grouped, (d) => d.avgTemp);
+  const tempColor = d3
     .scaleSequential()
-    .domain(d3.extent(grouped, (d) => d.avgTemp))
-    .interpolator(d3.interpolatePurples);
+    .domain(tempExtent)
+    .clamp(true)
+    .interpolator(
+      d3.interpolateRgbBasis([
+        "#1d4ed8",
+        "#60a5fa",
+        "#e2e8f0",
+        "#fde68a",
+        "#fb923c",
+        "#b91c1c",
+      ]),
+    );
 
   const applyXAxisLabelStyle = () => {
     xAxisGroup
@@ -152,7 +163,9 @@ d3.csv("./df_weather_fixed_utf8.csv").then((rawData) => {
             .attr("width", x.bandwidth())
             .attr("height", (d) => innerHeight - y(d.avgTemp))
             .attr("rx", 8)
-            .attr("fill", (d) => color(d.avgTemp))
+            .attr("fill", (d) => tempColor(d.avgTemp))
+            .attr("stroke", "rgba(15, 23, 42, 0.1)")
+            .attr("stroke-width", 0.8)
             .call(attachBarInteractions),
         (update) =>
           update
@@ -161,7 +174,9 @@ d3.csv("./df_weather_fixed_utf8.csv").then((rawData) => {
             .attr("y", (d) => y(d.avgTemp))
             .attr("width", x.bandwidth())
             .attr("height", (d) => innerHeight - y(d.avgTemp))
-            .attr("fill", (d) => color(d.avgTemp)),
+            .attr("fill", (d) => tempColor(d.avgTemp))
+            .attr("stroke", "rgba(15, 23, 42, 0.1)")
+            .attr("stroke-width", 0.8),
         (exit) => exit.remove(),
       );
   };
