@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Task 7 - Tần suất trạng thái thời tiết</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .chart-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 10px 16px;
+        background: #6b21a8;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background 200ms ease;
+      }
+      .back-link:hover {
+        background: #115e59;
+      }
+      .chart-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 18px 0 18px;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.88);
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid var(--surface-border);
+        box-shadow: var(--shadow);
+      }
+      .filter-select {
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 8px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.92);
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+      }
+      .summary-box {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      .stat-item {
+        flex: 1;
+        padding: 16px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid var(--surface-border);
+        box-shadow: var(--shadow);
+      }
+      .arc-path {
+        stroke: #ffffff;
+        stroke-width: 2px;
+        transition: all 200ms ease;
+        cursor: pointer;
+      }
+      .dimmed {
+        opacity: 0.2 !important;
+        filter: grayscale(80%);
+      }
+      .legend-item {
+        cursor: pointer;
+        transition: opacity 200ms ease;
+      }
+      .legend-item:hover {
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chart-container">
+      <a href="index.html" class="back-link">← Quay lại trang chủ</a>
+      
+      <h1>Tần suất trạng thái thời tiết</h1>
+      
+      <div class="chart-controls">
+        <label style="font-weight: 600; color: #334155;">Vùng (Region):</label>
+        <select id="region-filter" class="filter-select">
+          <option value="All">Tất cả các vùng</option>
+        </select>
+
+        <span style="border-left: 1px solid #cbd5e1; height: 24px; margin: 0 8px;"></span>
+
+        <label style="font-weight: 600; color: #334155;">Từ tháng:</label>
+        <select id="start-month" class="filter-select"></select>
+        <span style="font-weight: 600; color: #334155;">đến:</span>
+        <select id="end-month" class="filter-select"></select>
+      </div>
+
+      <div class="summary-box">
+        <div class="stat-item">
+          <div style="color: #ea580c; font-weight: bold; font-size: 13px; text-transform: uppercase;">☀️ Xuất hiện nhiều nhất</div>
+          <div id="highest-weather" style="font-size: 18px; font-weight: 700; margin-top: 8px;">--</div>
+        </div>
+        <div class="stat-item">
+          <div style="color: #0284c7; font-weight: bold; font-size: 13px; text-transform: uppercase;">🌧️ Xuất hiện ít nhất</div>
+          <div id="lowest-weather" style="font-size: 18px; font-weight: 700; margin-top: 8px;">--</div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-card--wide" style="display: flex; justify-content: center;">
+        <svg id="chart7" style="max-width: 100%; height: auto; min-height: 500px;"></svg>
+      </div>
+    </div>
+
+    <div id="tooltip"></div>
+
+    <script src="task7.js"></script>
+  </body>
+</html>

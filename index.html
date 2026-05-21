@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Weather Data Analysis - D3 Visualization</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+        margin-top: 32px;
+      }
+      .card {
+        position: relative;
+        padding: 28px 24px;
+        border: 1px solid var(--surface-border);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: var(--shadow);
+        transition: all 300ms ease;
+        overflow: hidden;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.26),
+          transparent 28%
+        );
+        pointer-events: none;
+      }
+      .card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.16);
+      }
+      .card-inner {
+        position: relative;
+        z-index: 1;
+      }
+      .card h3 {
+        margin: 0 0 12px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .card-desc {
+        margin: 0 0 16px;
+        color: #475569;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .card-link {
+        display: inline-block;
+        padding: 10px 18px;
+        background: linear-gradient(135deg, #0f766e, #0d665a);
+        color: white;
+        text-decoration: none;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 200ms ease;
+        border: 2px solid transparent;
+      }
+      .card-link:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 16px rgba(15, 118, 110, 0.3);
+      }
+      .card-link:active {
+        transform: scale(0.98);
+      }
+      .card-color-purple .card-link {
+        background: linear-gradient(135deg, #6b21a8, #581c87);
+      }
+      .card-color-purple .card-link:hover {
+        box-shadow: 0 8px 16px rgba(107, 33, 168, 0.3);
+      }
+      .card-color-red .card-link {
+        background: linear-gradient(135deg, #991b1b, #7f1d1d);
+      }
+      .card-color-red .card-link:hover {
+        box-shadow: 0 8px 16px rgba(153, 27, 27, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <p class="eyebrow">D3 Visualization Project</p>
+        <h1>Weather Data Analysis</h1>
+        <p class="hero-copy">
+          Ba biểu đồ tương tác dùng chung nguồn dữ liệu
+          <strong>df_weather_fixed_utf8.csv</strong> để phân tích nhiệt độ, mật
+          độ điểm đo và mối liên hệ giữa độ dài ban ngày với UV. Bấm vào mỗi
+          biểu đồ bên dưới để xem chi tiết đầy đủ với tooltip tương tác.
+        </p>
+      </header>
+
+      <section class="cards-grid">
+        <article class="card card-color-purple">
+          <div class="card-inner">
+            <h3>📈 Task 1: Phân bố nhiệt độ theo thời gian</h3>
+            <p class="card-desc">
+              Line chart thể hiện sự thay đổi của nhiệt độ trung bình ngày theo thời gian. Mỗi điểm trên đường là một quan sát.
+            </p>
+            <a href="task1.html" class="card-link">Xem biểu đồ →</a>
+          </div>
+        </article>
+
+        <article class="card card-color-purple">
+          <div class="card-inner">
+            <h3>📊 Task 2: So sánh nhiệt độ</h3>
+            <p class="card-desc">
+              Bar chart so sánh nhiệt độ trung bình giữa các vùng với màu tím từ
+              nhạt đến đậm. Mỗi cột là một region khác nhau.
+            </p>
+            <a href="task2.html" class="card-link">Xem biểu đồ →</a>
+          </div>
+        </article>
+
+        <article class="card card-color-teal">
+            <div class="card-inner">
+                <h3>🗺️ Task 4: Bản đồ nhiệt độ trung bình</h3>
+                <p class="card-desc">
+                Choropleth map hiển thị nhiệt độ trung bình theo tỉnh. Màu sắc từ xanh dương (nhiệt độ thấp) đến đỏ (nhiệt độ cao). Tooltip hiển thị tên tỉnh và nhiệt độ khi hover.
+                </p>
+                <a href="task4.html" class="card-link">Xem biểu đồ →</a>
+            </div>
+        </article>
+
+        <article class="card card-color-red">
+          <div class="card-inner">
+            <h3>📈 Task 6: Mật độ điểm đo</h3>
+            <p class="card-desc">
+              Bar chart hiển thị số lượng điểm đo trong mỗi khu vực với màu đỏ
+              từ nhạt đến đậm, phản ánh mật độ dữ liệu.
+            </p>
+            <a href="task6.html" class="card-link">Xem biểu đồ →</a>
+          </div>
+        </article>
+
+        <article class="card card-color-red">
+          <div class="card-inner">
+            <h3>Task 7: Tần suất trạng thái thời tiết</h3>
+            <p class="card-desc">
+              
+            </p>
+            <a href="task7.html" class="card-link">Xem biểu đồ →</a>
+          </div>
+        </article>
+
+        <article class="card card-color-teal">
+          <div class="card-inner">
+            <h3>🌤️ Task 12: UV vs Độ dài ban ngày</h3>
+            <p class="card-desc">
+              Scatter plot khám phá mối liên hệ giữa độ dài ban ngày (tính từ
+              Sunrise-Sunset) và chỉ số UV. Mỗi điểm là một quan sát.
+            </p>
+            <a href="task12.html" class="card-link">Xem biểu đồ →</a>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Task 4 - Bản đồ nhiệt độ trung bình (Choropleth Map)</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .chart-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 10px 16px;
+        background: #6b21a8;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background 200ms ease;
+      }
+      .back-link:hover {
+        background: #115e59;
+      }
+      .chart-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 18px 0 18px;
+        align-items: center;
+      }
+      .filter-select {
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 8px;
+        padding: 10px 16px;
+        background: rgba(255, 255, 255, 0.92);
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+      }
+      .summary-box {
+        margin-bottom: 20px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid var(--surface-border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        font-size: 15px;
+        color: var(--ink);
+        line-height: 1.6;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      .stat-item {
+        flex: 1;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--page-bg-2);
+        border: 1px solid var(--surface-border);
+      }
+      .province-path {
+        stroke: #ffffff;
+        stroke-width: 0.8;
+        transition: all 250ms ease;
+        cursor: pointer;
+      }
+      .province-path:hover {
+        stroke: #0f172a;
+        stroke-width: 1.5;
+      }
+      .dimmed {
+        opacity: 0.15 !important;
+      }
+      .legend text {
+        font-size: 11px;
+        fill: #475569;
+      }
+      .legend-title {
+        font-weight: bold;
+        fill: #0f172a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chart-container">
+      <a href="index.html" class="back-link">← Quay lại trang chủ</a>
+      
+      <h1>Bản đồ Phân bố Nhiệt độ Trung bình</h1>
+      
+      <div class="chart-controls">
+        <label style="font-weight: 600; color: #334155;">Khoảng thời gian:</label>
+        
+        <select id="start-month" class="filter-select"></select>
+        <span style="font-weight: 600; color: #334155;">đến</span>
+        <select id="end-month" class="filter-select"></select>
+      </div>
+
+      <div class="summary-box">
+        <div class="stat-item">
+          <div style="color: #be123c; font-weight: bold; font-size: 13px; text-transform: uppercase;">🔥 Nơi có nhiệt độ cao nhất</div>
+          <div id="highest-temp" style="font-size: 18px; font-weight: 700; margin-top: 8px;">--</div>
+        </div>
+        <div class="stat-item">
+          <div style="color: #0369a1; font-weight: bold; font-size: 13px; text-transform: uppercase;">❄️ Nơi có nhiệt độ thấp nhất</div>
+          <div id="lowest-temp" style="font-size: 18px; font-weight: 700; margin-top: 8px;">--</div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-card--wide">
+        <svg id="chart4" style="max-width: 100%; height: auto; min-height: 800px;"></svg>
+      </div>
+    </div>
+
+    <div id="tooltip"></div>
+
+    <script src="task4.js"></script>
+  </body>
+</html>
