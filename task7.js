@@ -1,11 +1,11 @@
 // --- CẤU HÌNH 6 LOẠI THỜI TIẾT KÈM ICON VÀ MÀU SẮC DỊU MẮT ---
 const weatherConfig = {
-  "Sunny": { icon: "☀️", color: "#f59e0b" },         
-  "Cloudy": { icon: "☁️", color: "#eaf4fb" },        
-  "Fog/Mist": { icon: "🌫️", color: "#afafaf" },      
-  "Light rain": { icon: "🌦️", color: "#2a9d8f" },    
-  "Heavy rain": { icon: "🌧️", color: "#3a86ff" },    
-  "Thunderstorm": { icon: "⛈️", color: "#6a4c93" }   
+  "Sunny": { icon: "☀️", color: "#FFB703" },         
+  "Cloudy": { icon: "☁️", color: "#D6DCE5" },        
+  "Fog/Mist": { icon: "🌫️", color: "#9AA5B1" },      
+  "Light rain": { icon: "🌦️", color: "#2EC4B6" },    
+  "Heavy rain": { icon: "🌧️", color: "#3A86FF" },    
+  "Thunderstorm": { icon: "⛈️", color: "#8338EC" }   
 };
 
 // Hàm lấy màu & icon (Nếu xuất hiện thời tiết ngoài 6 loại này sẽ dùng màu/icon mặc định)
