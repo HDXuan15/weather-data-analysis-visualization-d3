@@ -402,7 +402,7 @@
         top: 50,
         right: 30,
         bottom: 60,
-        left: 120,
+        left: 100,
       };
 
       // Định nghĩa tháng
@@ -1278,22 +1278,16 @@
         heatmapChart.select(".legend-group").style("display", null);
         heatmapChart.select(".empty-message").style("display", "none");
 
-        const locations = Array.from(
-          new Set(filteredHeatmapData.map((d) => d.location)),
-        ).sort();
-        const cellSize = 40;
-        const newHeatmapHeight =
-          locations.length * cellSize +
-          heatmapChartMargin.top +
-          heatmapChartMargin.bottom +
-          100;
+        const locations = Array.from(new Set(filteredHeatmapData.map((d) => d.location))).sort();
+        const cellSize = 40; 
 
-        const chartWidth =
-          heatmapChartWidth -
-          heatmapChartMargin.left -
-          heatmapChartMargin.right;
-        const chartHeight =
-          newHeatmapHeight - heatmapChartMargin.top - heatmapChartMargin.bottom;
+        // 1. Tính chiều cao vùng vẽ đồ thị bằng số lượng tỉnh thực tế * kích thước ô
+        const chartHeight = locations.length * cellSize; 
+
+        // 2. Chiều cao tổng của SVG bao gồm vùng vẽ + lề trên/dưới + khoảng trống cho trục X & Legend
+        const newHeatmapHeight = chartHeight + heatmapChartMargin.top + heatmapChartMargin.bottom + 120;
+
+        const chartWidth = heatmapChartWidth - heatmapChartMargin.left - heatmapChartMargin.right;
 
         // Transition SVG height
         heatmapChart
@@ -1427,7 +1421,7 @@
           .transition()
           .duration(600)
           .attr("x", heatmapChartMargin.left + chartWidth / 2)
-          .attr("y", newHeatmapHeight - 20)
+          .attr("y", newHeatmapHeight - 140)
           .attr("text-anchor", "middle")
           .attr("font-size", "13px")
           .text("Tháng");
@@ -1441,8 +1435,8 @@
 
         const legendHeight = 20;
         const legendWidth = 200;
-        const legendX = heatmapChartMargin.left + 10;
-        const legendY = 25;
+        const legendX = heatmapChartMargin.left + 40;
+        const legendY = 25; 
 
         const legendScale = d3
           .scaleLinear()
@@ -1455,7 +1449,7 @@
           .selectAll(".legend-rect")
           .data(
             d3.range(0, legendWidth, 2).map((d) => ({
-              x: d,
+              x: d, 
               value: legendScale.invert(d),
             })),
           )
@@ -1470,7 +1464,7 @@
 
         legendGroup
           .append("text")
-          .attr("x", -7)
+          .attr("x", -10)
           .attr("y", -5)
           .attr("font-size", "12px")
           .attr("text-anchor", "end")
