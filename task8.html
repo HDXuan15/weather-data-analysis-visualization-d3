@@ -32,6 +32,25 @@
         overflow: hidden;
       }
 
+      .back-link {
+        display: inline-block;
+        position: fixed;
+        top: 20px;
+        left: 28px;
+        margin: 0;
+        padding: 8px 12px;
+        background: #6b21a8;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        z-index: 10000;
+      }
+      .back-link:hover {
+        background: #115e59;
+      }
+
       /* Header: colored band at top of the container */
       .header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -236,11 +255,11 @@
     </style>
   </head>
   <body>
-    <div class="frame">
+    <a href="index.html" class="back-link">← Quay lại trang chủ</a>
+    <div class="container">
       <div class="header">
         <h1>Phân bố nhiệt độ trung bình ngày theo trạng thái thời tiết</h1>
       </div>
-      <div class="container">
         <div id="error-container"></div>
         <div id="loading" class="loading">Đang tải dữ liệu...</div>
         <div class="chart-wrapper">
@@ -630,7 +649,7 @@
               .attr("class", "box")
               .attr("fill", (d) => colorScale(d.condition))
               .attr("opacity", 0.6)
-              .on("mouseover", function () {
+              .on("mouseover", function (event, d) {
                 const condition = d3
                   .select(this.parentNode.parentNode)
                   .attr("data-condition");
@@ -644,7 +663,7 @@
                 const groupData = d3.select(this.parentNode.parentNode).datum();
                 showTooltip(groupData, event);
               })
-              .on("mouseout", function () {
+              .on("mouseout", function (event, d) {
                 const condition = d3
                   .select(this.parentNode.parentNode)
                   .attr("data-condition");
@@ -674,7 +693,7 @@
                   .attr("r", 4)
                   .attr("fill", colorScale(d.condition))
                   .attr("opacity", 0.7)
-                  .on("mouseover", function () {
+                  .on("mouseover", function (event) {
                     d3.select(this).attr("r", 6).attr("opacity", 1);
                     d3.selectAll(
                       ".boxplot-group[data-condition='" +
@@ -690,7 +709,7 @@
                     ).attr("stroke-width", 3);
                     showOutlierTooltip(d.condition, outlier, event);
                   })
-                  .on("mouseout", function () {
+                  .on("mouseout", function (event) {
                     d3.select(this).attr("r", 4).attr("opacity", 0.7);
                     d3.selectAll(
                       ".boxplot-group[data-condition='" +
@@ -887,7 +906,7 @@
               .append("div")
               .attr("class", "legend-item")
               .attr("data-filter-condition", d.condition)
-              .on("mouseover", function () {
+              .on("mouseover", function (event) {
                 if (!selectedStatuses.has(d.condition)) {
                   d3.selectAll(
                     ".boxplot-group[data-condition='" + d.condition + "']",
@@ -901,7 +920,7 @@
                     .attr("stroke-width", 3);
                 }
               })
-              .on("mouseout", function () {
+              .on("mouseout", function (event) {
                 if (!selectedStatuses.has(d.condition)) {
                   d3.selectAll(
                     ".boxplot-group[data-condition='" + d.condition + "'] .box",
@@ -946,7 +965,7 @@
                     .attr("opacity", 1);
                 }
               })
-              .on("click", function () {
+              .on("click", function (event) {
                 if (selectedStatuses.has(d.condition)) {
                   selectedStatuses.delete(d.condition);
                   d3.select(this).classed("filtered", false);

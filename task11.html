@@ -16,13 +16,13 @@
         font-family: "Arial", sans-serif;
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         min-height: 100vh;
-        padding: 20px;
+        padding: 40px; /* tăng lề ngoài */
         display: flex;
-        gap: 20px;
+        gap: 28px;
       }
 
       .sidebar {
-        width: 200px;
+        width: 220px;
         background: white;
         border-radius: 12px;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -32,31 +32,54 @@
         top: 20px;
       }
 
+      .container {
+        max-width: 1000px; /* giới hạn chiều rộng để nội dung ngắn hơn */
+        margin: 0 auto;
+        display: flex;
+        gap: 28px;
+        align-items: flex-start;
+      }
+
+      .back-link {
+        display: inline-block;
+        margin: 0 0 12px 0;
+        padding: 6px 10px;
+        background: #6b21a8;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .back-link:hover {
+        background: #5a1a95;
+      }
+
       .dashboard {
         flex: 1;
         background: white;
         border-radius: 12px;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-        padding: 40px;
+        padding: 24px; /* giảm padding để nội dung nhỏ gọn hơn */
       }
 
       .title {
         text-align: center;
-        font-size: 32px;
+        font-size: 26px;
         font-weight: bold;
         color: #2c3e50;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
       }
 
       .header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 20px;
+        padding: 14px;
         text-align: center;
         border-top-left-radius: 12px;
         border-top-right-radius: 12px;
-        font-size: 21px;
-        margin-bottom: 24px; /* khoang cach giua header va noi dung */
+        font-size: 18px;
+        margin-bottom: 18px; /* khoang cach giua header va noi dung */
         font-weight: 600;
       }
 
@@ -170,10 +193,10 @@
       }
 
       .chart-title {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: bold;
         color: #2c3e50;
-        margin-bottom: 20px;
+        margin-bottom: 14px;
         text-align: center;
       }
 
@@ -182,7 +205,7 @@
         justify-content: center;
         background: #f9f9f9;
         border-radius: 8px;
-        padding: 20px;
+        padding: 16px;
         border: 1px solid #e0e0e0;
         overflow-x: auto;
       }
@@ -318,20 +341,22 @@
     </style>
   </head>
   <body>
-    <div class="sidebar">
-      <div class="controls">
-        <div class="filter-title">Chọn vùng:</div>
+    <div class="container">
+      <div class="sidebar">
+        <a href="index.html" class="back-link">← Quay lại trang chủ</a>
+        <div class="controls">
+          <div class="filter-title">Chọn vùng:</div>
 
-        <div id="region-filter-bar" class="region-filter-bar">
-          <!-- D3 sẽ tự render các nút filter ở đây -->
+          <div id="region-filter-bar" class="region-filter-bar">
+            <!-- D3 sẽ tự render các nút filter ở đây -->
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="dashboard">
-      <div class="header">
-        Phân tích độ dài ban ngày theo vùng và tỉnh/thành
-      </div>
+      <div class="dashboard">
+        <div class="header">
+          Phân tích độ dài ban ngày theo vùng và tỉnh/thành
+        </div>
 
       <div id="error-container"></div>
       <div id="loading" class="loading">Đang tải dữ liệu...</div>
@@ -361,17 +386,17 @@
       // CONFIGURATION
       // ============================================
 
-      const lineChartWidth = 1000;
+      const lineChartWidth = 700;
       const lineChartHeight = 400;
       const lineChartMargin = {
-        top: 30,
+        top: 30, 
         right: 30,
         bottom: 70,
-        left: 70,
+        left: 60,
       };
 
       // kich thuoc heatmap
-      const heatmapChartWidth = 800;
+      const heatmapChartWidth = 700;
       const heatmapChartHeight = 1000;
       const heatmapChartMargin = {
         top: 50,
@@ -933,8 +958,8 @@
         g.append("g")
           .attr("transform", `translate(0,${chartHeight})`)
           .call(d3.axisBottom(xScale))
-          .selectAll("text")
-          .attr("font-size", "12px");
+            .selectAll("text")
+            .attr("font-size", "10px");
 
         // Y Axis
         g.append("g")
@@ -947,7 +972,7 @@
           .append("text")
           .attr("class", "axis-title")
           .attr("x", lineChartWidth / 2)
-          .attr("y", lineChartHeight - 10)
+          .attr("y", lineChartHeight - 30)
           .attr("text-anchor", "middle")
           .text("Tháng");
 
@@ -956,9 +981,9 @@
           .append("text")
           .attr("class", "axis-title")
           .attr("transform", "rotate(-90)")
-          .attr("x", -lineChartHeight / 2 - lineChartMargin.top)
+          .attr("x", -lineChartHeight / 2 - lineChartMargin.top - 50)
           .attr("y", 20)
-          .attr("text-anchor", "middle")
+          .attr("text-anchor", "start") 
           .text("Độ dài ban ngày trung bình (giờ)");
 
         // Lines
@@ -983,7 +1008,7 @@
             .attr("stroke-width", 2)
             .attr("fill", "none")
             .attr("opacity", 0.7)
-            .on("mouseover", function () {
+              .on("mouseover", function (event) {
               if (tooltipPinned) return; // không override khi tooltip đang pinned
               // Highlight line này
               lineChart.selectAll(".line").attr("opacity", 0.2);
@@ -996,7 +1021,7 @@
                 .attr("opacity", 1)
                 .attr("r", 5);
             })
-            .on("mouseout", function () {
+            .on("mouseout", function (event) {
               if (tooltipPinned) return; // không override khi tooltip đang pinned
               // Reset
               lineChart
@@ -1155,7 +1180,7 @@
               }<br/>Độ dài: ${d.avgDayLength.toFixed(2)} giờ`,
             );
           })
-          .on("mouseout", function () {
+          .on("mouseout", function (event, d) {
             // Nếu ô này đang được pin thì không reset hoặc ẩn tooltip
             if (d3.select(this).attr("data-pinned") === "true") return;
             d3.select(this).attr("stroke", "white").attr("stroke-width", 1);
@@ -1532,7 +1557,7 @@
           .attr("class", "region-chip all active")
           .attr("data-region", "")
           .text("Tất cả vùng")
-          .on("click", function () {
+          .on("click", function (event) {
             updateDashboard("");
             updateActiveFilterChip("");
           });
