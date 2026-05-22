@@ -13,12 +13,11 @@ const updateTooltipPosition = (event, tooltipElement) => {
   tooltipElement.style("left", `${x}px`).style("top", `${y}px`);
 };
 
-// Hàm hỗ trợ chuyển đổi định dạng YYYY-MM sang MM-YYYY để hiển thị
 const formatMonthDisplay = (str) => {
   if (!str) return "--";
   const parts = str.split("-");
   if (parts.length === 2) {
-    return `${parts[1]}-${parts[0]}`; // Đổi chỗ Tháng và Năm
+    return `${parts[1]}-${parts[0]}`; 
   }
   return str;
 };
@@ -34,7 +33,6 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
       const dateObj = new Date(row["Date"]);
       return {
         dateObj: dateObj,
-        // Vẫn giữ chuỗi chuẩn YYYY-MM để D3.js có thể sắp xếp tăng dần chính xác
         monthStr: dateObj.getFullYear() + "-" + String(dateObj.getMonth() + 1).padStart(2, '0'),
         region: row["Location.Region"],
         location: row["Location.Name"],
@@ -90,7 +88,6 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
   const x = d3.scalePoint().domain(months).range([0, innerWidth]).padding(0.5);
   const y = d3.scaleLinear().range([innerHeight, 0]);
 
-  // Cập nhật nhãn trục X
   svg.append("text").attr("class", "axis-label").attr("x", margin.left + innerWidth / 2).attr("y", outerHeight - 10).attr("text-anchor", "middle").text("Thời gian (Tháng-Năm)");
   svg.append("text").attr("class", "axis-label").attr("transform", "rotate(-90)").attr("x", -(margin.top + innerHeight / 2)).attr("y", 20).attr("text-anchor", "middle").text("Nhiệt độ trung bình (°C)");
 
@@ -145,7 +142,8 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
 
       d3.select("#highest-val").html(`${maxReg?.region || "--"} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${maxReg?.overallAvg?.toFixed(2) || 0}°C)</span>`);
       d3.select("#lowest-val").html(`${minReg?.region || "--"} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${minReg?.overallAvg?.toFixed(2) || 0}°C)</span>`);
-    } else {
+    } 
+    else {
       const regionData = activeRegions[0];
       const maxMonth = regionData?.maxMonth;
       const minMonth = regionData?.minMonth;
@@ -153,7 +151,6 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
       d3.select("#highest-title").text("🔥 Tháng có nhiệt độ TB cao nhất");
       d3.select("#lowest-title").text("❄️ Tháng có nhiệt độ TB thấp nhất");
 
-      // Cập nhật định dạng hiển thị cho Summary Box
       d3.select("#highest-val").html(`Tháng ${formatMonthDisplay(maxMonth?.monthStr)} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${maxMonth?.avgTemp?.toFixed(2) || 0}°C)</span>`);
       d3.select("#lowest-val").html(`Tháng ${formatMonthDisplay(minMonth?.monthStr)} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${minMonth?.avgTemp?.toFixed(2) || 0}°C)</span>`);
     }
@@ -165,7 +162,6 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
 
     const transitionConf = d3.transition().duration(800).ease(d3.easeCubic);
 
-    // Sử dụng tickFormat để hiển thị trục X thành định dạng MM-YYYY
     xAxisGroup.transition(transitionConf).call(d3.axisBottom(x).tickFormat(d => formatMonthDisplay(d)));
     xAxisGroup.selectAll("text").attr("transform", "rotate(-35)").style("text-anchor", "end");
     yAxisGroup.transition(transitionConf).call(d3.axisLeft(y));
