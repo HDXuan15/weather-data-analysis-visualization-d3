@@ -1,16 +1,40 @@
+const updateTooltipPosition = (event, tooltipElement) => {
+  const node = tooltipElement.node();
+  const tooltipWidth = node.offsetWidth || 250;
+  const tooltipHeight = node.offsetHeight || 150;
+
+  let x = event.pageX;
+  let y = event.pageY;
+
+  // Adjust if tooltip goes off-screen
+  if (x + tooltipWidth > window.innerWidth - 10) x = window.innerWidth - tooltipWidth - 10;
+  if (y + tooltipHeight > window.innerHeight - 10) y = window.innerHeight - tooltipHeight - 10;
+  if (x < 10) x = 10;
+  if (y < 10) y = 10;
+
+  tooltipElement.style("left", `${x}px`).style("top", `${y}px`);
+};
+
+const formatMonthDisplay = (str) => {
+  if (!str) return "--";
+  const parts = str.split("-");
+  if (parts.length === 2) {
+    return `${parts[1]}-${parts[0]}`; 
+  }
+  return str;
+};
+
 d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
   const parseNumber = (value) => {
     const parsed = Number(String(value).trim().replace(",", "."));
     return Number.isFinite(parsed) ? parsed : NaN;
   };
 
-  // Làm sạch và format dữ liệu
   const data = rawData
     .map((row) => {
       const dateObj = new Date(row["Date"]);
       return {
         dateObj: dateObj,
-        // Tạo format YYYY-MM cho trục X
         monthStr: dateObj.getFullYear() + "-" + String(dateObj.getMonth() + 1).padStart(2, '0'),
         region: row["Location.Region"],
         location: row["Location.Name"],
@@ -19,202 +43,207 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
     })
     .filter((row) => row.region && !isNaN(row.avgTemp) && !isNaN(row.dateObj));
 
-  // Tự động lấy danh sách Region cho Dropdown
   const regions = Array.from(new Set(data.map((d) => d.region))).sort();
+  const months = Array.from(new Set(data.map((d) => d.monthStr))).sort();
+
+  const customColors = ["#dc2626", "#2563eb", "#16a34a", "#d97706", "#9333ea", "#ff00ae"];
+  const colorScale = d3.scaleOrdinal(customColors).domain(regions);
+
   const select = d3.select("#region-filter");
   regions.forEach((region) => {
     select.append("option").attr("value", region).text(region);
   });
 
-  const tooltip = d3.select("#tooltip");
-  const summaryBox = d3.select("#summary-box");
+  const legendContainer = d3.select("#legend-container");
+  regions.forEach((r) => {
+    const item = legendContainer.append("div").attr("class", "legend-item");
+    item.append("div").attr("class", "legend-color").style("background", colorScale(r));
+    item.append("span").text(r);
+    
+    item.on("mouseenter", () => {
+      d3.selectAll(".line").classed("dimmed", d => d.region !== r);
+      d3.selectAll(".dot").classed("dimmed", d => d.region !== r);
+    }).on("mouseleave", () => {
+      d3.selectAll(".line").classed("dimmed", false);
+      d3.selectAll(".dot").classed("dimmed", false);
+    });
+  });
 
-  // Thiết lập SVG và Margins
+  const tooltip = d3.select("#tooltip");
+
   const svg = d3.select("#chart1");
   const outerWidth = 960;
-  const outerHeight = 500;
-  const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+  const outerHeight = 550;
+  const margin = { top: 40, right: 30, bottom: 60, left: 60 };
   const innerWidth = outerWidth - margin.left - margin.right;
   const innerHeight = outerHeight - margin.top - margin.bottom;
 
   svg.attr("viewBox", `0 0 ${outerWidth} ${outerHeight}`);
 
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
+  const chart = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const xAxisGroup = chart.append("g").attr("transform", `translate(0,${innerHeight})`);
   const yAxisGroup = chart.append("g");
-  const path = chart.append("path").attr("class", "line");
-  const dotsGroup = chart.append("g").attr("class", "dots");
+  
+  const linesLayer = chart.append("g").attr("class", "lines-layer");
+  const dotsLayer = chart.append("g").attr("class", "dots-layer");
 
-  // Thiết lập các thanh Scale (ScalePoint cho chuỗi tháng, ScaleLinear cho Nhiệt độ)
-  const x = d3.scalePoint().range([0, innerWidth]).padding(0.5);
+  const x = d3.scalePoint().domain(months).range([0, innerWidth]).padding(0.5);
   const y = d3.scaleLinear().range([innerHeight, 0]);
 
-  // Labels cho biểu đồ
-  svg.append("text")
-    .attr("class", "axis-label")
-    .attr("x", margin.left + innerWidth / 2)
-    .attr("y", outerHeight - 10)
-    .attr("text-anchor", "middle")
-    .text("Thời gian (Năm-Tháng)");
+  svg.append("text").attr("class", "axis-label").attr("x", margin.left + innerWidth / 2).attr("y", outerHeight - 10).attr("text-anchor", "middle").text("Thời gian (Tháng-Năm)");
+  svg.append("text").attr("class", "axis-label").attr("transform", "rotate(-90)").attr("x", -(margin.top + innerHeight / 2)).attr("y", 20).attr("text-anchor", "middle").text("Nhiệt độ trung bình (°C)");
 
-  svg.append("text")
-    .attr("class", "axis-label")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -(margin.top + innerHeight / 2))
-    .attr("y", 20)
-    .attr("text-anchor", "middle")
-    .text("Nhiệt độ trung bình (°C)");
-
-  // Hàm Render biểu đồ (chạy lại mỗi khi đổi Filter)
-  const renderChart = (selectedRegion) => {
-    // 1. Lọc theo vùng
-    const filteredData =
-      selectedRegion === "All"
-        ? data
-        : data.filter((d) => d.region === selectedRegion);
-
-    // 2. Gom nhóm theo tháng (Month)
-    const groupedByMonth = d3.groups(filteredData, (d) => d.monthStr);
-    
-    // Sắp xếp dữ liệu theo thứ tự thời gian
-    groupedByMonth.sort((a, b) => d3.ascending(a[0], b[0]));
-
-    const monthlyData = groupedByMonth.map(([monthStr, monthRecords]) => {
-      // Nhiệt độ TB của cả tháng
-      const overallAvg = d3.mean(monthRecords, (d) => d.avgTemp);
-
-      // Tìm nơi (location) có nhiệt độ cao nhất / thấp nhất trong tháng đó
-      const groupedByLoc = d3.groups(monthRecords, (d) => d.location);
-      const locAvgs = groupedByLoc.map(([loc, locRecords]) => ({
-        location: loc,
-        avg: d3.mean(locRecords, (d) => d.avgTemp),
-      }));
-
-      // Sort các location theo nhiệt độ
-      locAvgs.sort((a, b) => d3.ascending(a.avg, b.avg));
+  const regionGroups = d3.groups(data, (d) => d.region).map(([region, regionData]) => {
+    const monthlyGroups = d3.groups(regionData, (d) => d.monthStr).map(([monthStr, monthData]) => {
+      const avgTemp = d3.mean(monthData, (d) => d.avgTemp);
       
-      const lowestLoc = locAvgs[0];
-      const highestLoc = locAvgs[locAvgs.length - 1];
-
+      const locGroups = d3.groups(monthData, (d) => d.location).map(([loc, locRecords]) => ({
+        loc, avg: d3.mean(locRecords, (d) => d.avgTemp),
+      })).sort((a, b) => d3.ascending(a.avg, b.avg));
+      
       return {
+        region,
         monthStr,
-        avgTemp: overallAvg,
-        highestLoc,
-        lowestLoc,
+        avgTemp,
+        lowestLoc: locGroups[0],
+        highestLoc: locGroups[locGroups.length - 1],
       };
-    });
+    }).sort((a, b) => d3.ascending(a.monthStr, b.monthStr));
 
-    if (monthlyData.length === 0) {
-      path.attr("d", "");
-      dotsGroup.selectAll("circle").remove();
-      summaryBox.html("Không có dữ liệu cho vùng này.");
-      return;
+    const overallAvg = d3.mean(monthlyGroups, (d) => d.avgTemp);
+    const sortedMonths = [...monthlyGroups].sort((a, b) => d3.ascending(a.avgTemp, b.avgTemp));
+
+    return {
+      region,
+      overallAvg,
+      monthlyData: monthlyGroups,
+      minMonth: sortedMonths[0],
+      maxMonth: sortedMonths[sortedMonths.length - 1],
+    };
+  });
+
+  const lineGenerator = d3.line()
+    .x((d) => x(d.monthStr))
+    .y((d) => y(d.avgTemp))
+    .curve(d3.curveMonotoneX);
+
+  const renderChart = (selectedRegion) => {
+    const activeRegions = selectedRegion === "All" 
+      ? regionGroups 
+      : regionGroups.filter((d) => d.region === selectedRegion);
+
+    if (activeRegions.length === 0) return;
+
+    if (selectedRegion === "All") {
+      const sortedActiveRegions = [...activeRegions].sort((a, b) => d3.ascending(a.overallAvg, b.overallAvg));
+      const minReg = sortedActiveRegions[0];
+      const maxReg = sortedActiveRegions[sortedActiveRegions.length - 1];
+
+      d3.select("#highest-title").text("🔥 Vùng có nhiệt độ TB cao nhất");
+      d3.select("#lowest-title").text("❄️ Vùng có nhiệt độ TB thấp nhất");
+
+      d3.select("#highest-val").html(`${maxReg?.region || "--"} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${maxReg?.overallAvg?.toFixed(2) || 0}°C)</span>`);
+      d3.select("#lowest-val").html(`${minReg?.region || "--"} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${minReg?.overallAvg?.toFixed(2) || 0}°C)</span>`);
+    } 
+    else {
+      const regionData = activeRegions[0];
+      const maxMonth = regionData?.maxMonth;
+      const minMonth = regionData?.minMonth;
+
+      d3.select("#highest-title").text("🔥 Tháng có nhiệt độ TB cao nhất");
+      d3.select("#lowest-title").text("❄️ Tháng có nhiệt độ TB thấp nhất");
+
+      d3.select("#highest-val").html(`Tháng ${formatMonthDisplay(maxMonth?.monthStr)} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${maxMonth?.avgTemp?.toFixed(2) || 0}°C)</span>`);
+      d3.select("#lowest-val").html(`Tháng ${formatMonthDisplay(minMonth?.monthStr)} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${minMonth?.avgTemp?.toFixed(2) || 0}°C)</span>`);
     }
 
-    // --- Tính toán khoảng thời gian (tháng) có nhiệt độ cao nhất / thấp nhất ---
-    const sortedByTemp = [...monthlyData].sort((a, b) => d3.ascending(a.avgTemp, b.avgTemp));
-    const minMonth = sortedByTemp[0];
-    const maxMonth = sortedByTemp[sortedByTemp.length - 1];
-
-    summaryBox.html(`
-      <strong>Thống kê khoảng thời gian:</strong><br>
-      • Tháng có nhiệt độ trung bình <strong>cao nhất</strong>: <span style="color: #be123c;">${maxMonth.monthStr}</span> (${maxMonth.avgTemp.toFixed(2)}°C)<br>
-      • Tháng có nhiệt độ trung bình <strong>thấp nhất</strong>: <span style="color: #0369a1;">${minMonth.monthStr}</span> (${minMonth.avgTemp.toFixed(2)}°C)
-    `);
-
-    // --- Update Scale ---
-    x.domain(monthlyData.map((d) => d.monthStr));
-    const yMax = d3.max(monthlyData, (d) => d.avgTemp);
-    const yMin = d3.min(monthlyData, (d) => d.avgTemp);
-    
-    const yPadding = (yMax - yMin) * 0.2 || 2; 
-    y.domain([yMin - yPadding, yMax + yPadding]).nice();
+    const allMonthsData = activeRegions.flatMap(d => d.monthlyData);
+    const yMax = d3.max(allMonthsData, d => d.avgTemp) || 0;
+    const yMin = d3.min(allMonthsData, d => d.avgTemp) || 0;
+    y.domain([yMin - 1, yMax + 1]).nice();
 
     const transitionConf = d3.transition().duration(800).ease(d3.easeCubic);
 
-    // Update Axes
-    xAxisGroup.transition(transitionConf).call(d3.axisBottom(x));
-    xAxisGroup.selectAll("text")
-      .attr("transform", "rotate(-35)")
-      .style("text-anchor", "end");
-
+    xAxisGroup.transition(transitionConf).call(d3.axisBottom(x).tickFormat(d => formatMonthDisplay(d)));
+    xAxisGroup.selectAll("text").attr("transform", "rotate(-35)").style("text-anchor", "end");
     yAxisGroup.transition(transitionConf).call(d3.axisLeft(y));
 
-    // Update Line Path
-    const lineGenerator = d3
-      .line()
-      .x((d) => x(d.monthStr))
-      .y((d) => y(d.avgTemp))
-      .curve(d3.curveMonotoneX); // Làm cong đường vẽ (smooth)
-
-    path
-      .datum(monthlyData)
-      .transition(transitionConf)
-      .attr("d", lineGenerator);
-
-    // --- Vẽ Points và Xử lý Hover (Tooltip) ---
-    dotsGroup
-      .selectAll("circle")
-      .data(monthlyData, (d) => d.monthStr)
+    const lines = linesLayer.selectAll(".line")
+      .data(activeRegions, d => d.region)
       .join(
-        (enter) =>
-          enter
-            .append("circle")
-            .attr("class", "dot")
-            .attr("cx", (d) => x(d.monthStr))
-            .attr("cy", (d) => y(d.avgTemp))
-            .attr("r", 0)
-            .call((enter) => enter.transition(transitionConf).attr("r", 5)),
-        (update) =>
-          update.call((update) =>
-            update
-              .transition(transitionConf)
-              .attr("cx", (d) => x(d.monthStr))
-              .attr("cy", (d) => y(d.avgTemp))
-          ),
-        (exit) =>
-          exit.call((exit) =>
-            exit.transition(transitionConf).attr("r", 0).remove()
-          )
-      )
-      .on("mouseenter", function (event, d) {
-        // Highlighting point
-        d3.select(this).attr("r", 8).attr("filter", "brightness(1.2)");
-        
-        // Hiện Tooltip
-        tooltip
-          .style("opacity", 1)
-          .html(
-            `<strong>Tháng: ${d.monthStr}</strong><br/>
-             Nhiệt độ trung bình: <strong>${d.avgTemp.toFixed(2)}°C</strong>
-             <hr style="margin: 6px 0; border: none; border-top: 1px dashed rgba(15, 23, 42, 0.2);"/>
-             <span style="color: #be123c;">▲ Cao nhất:</span> ${d.highestLoc.location} (${d.highestLoc.avg.toFixed(2)}°C)<br/>
-             <span style="color: #0369a1;">▼ Thấp nhất:</span> ${d.lowestLoc.location} (${d.lowestLoc.avg.toFixed(2)}°C)`
-          )
-          .style("left", `${event.pageX + 15}px`)
-          .style("top", `${event.pageY + 15}px`);
-      })
-      .on("mousemove", function (event) {
-        tooltip
-          .style("left", `${event.pageX + 15}px`)
-          .style("top", `${event.pageY + 15}px`);
-      })
-      .on("mouseleave", function () {
-        // Reset point
-        d3.select(this).attr("r", 5).attr("filter", null);
-        // Ẩn Tooltip
-        tooltip.style("opacity", 0);
-      });
+        enter => enter.append("path")
+          .attr("class", "line")
+          .style("opacity", 0)
+          .call(enter => enter.transition(transitionConf).style("opacity", 1)),
+        update => update,
+        exit => exit.call(exit => exit.transition(transitionConf).style("opacity", 0).remove())
+      );
+
+    lines.style("stroke", d => colorScale(d.region), "important");
+    lines.transition(transitionConf).attr("d", d => lineGenerator(d.monthlyData));
+
+    lines.on("mouseenter", function (event, d) {
+      linesLayer.selectAll(".line").classed("dimmed", true);
+      dotsLayer.selectAll(".dot").classed("dimmed", true);
+      d3.select(this).classed("dimmed", false);
+
+      // Cập nhật Tooltip của Line
+      tooltip.style("opacity", 1).html(`
+        <strong style="font-size: 14px;">Vùng: ${d.region}</strong>
+        <hr style="margin: 6px 0; border: none; border-top: 1px dashed rgba(15, 23, 42, 0.2);"/>
+        Nhiệt độ TB tất cả tháng: <strong>${d.overallAvg?.toFixed(2) || 0}°C</strong><br/>
+        <span style="color: #be123c;">▲ Tháng nóng nhất:</span> ${formatMonthDisplay(d.maxMonth?.monthStr)} (${d.maxMonth?.avgTemp?.toFixed(2) || 0}°C)<br/>
+        <span style="color: #0369a1;">▼ Tháng lạnh nhất:</span> ${formatMonthDisplay(d.minMonth?.monthStr)} (${d.minMonth?.avgTemp?.toFixed(2) || 0}°C)
+      `);
+      updateTooltipPosition(event, tooltip);
+    })
+    .on("mousemove", (event) => updateTooltipPosition(event, tooltip))
+    .on("mouseleave", function () {
+      linesLayer.selectAll(".line").classed("dimmed", false);
+      dotsLayer.selectAll(".dot").classed("dimmed", false);
+      tooltip.style("opacity", 0);
+    });
+
+    const dots = dotsLayer.selectAll(".dot")
+      .data(allMonthsData, d => d.region + d.monthStr)
+      .join(
+        enter => enter.append("circle")
+          .attr("class", "dot")
+          .attr("r", 0)
+          .call(enter => enter.transition(transitionConf).attr("r", 4.5)),
+        update => update,
+        exit => exit.call(exit => exit.transition(transitionConf).attr("r", 0).remove())
+      );
+
+    dots.style("fill", d => colorScale(d.region), "important");
+    dots.transition(transitionConf).attr("cx", d => x(d.monthStr)).attr("cy", d => y(d.avgTemp));
+
+    dots.on("mouseenter", function (event, d) {
+      event.stopPropagation();
+      d3.select(this).attr("r", 8).attr("filter", "brightness(1.1)");
+      
+      // Cập nhật Tooltip của Dot
+      tooltip.style("opacity", 1).html(`
+        <strong>${d.region} - Tháng ${formatMonthDisplay(d.monthStr)}</strong>
+        <hr style="margin: 6px 0; border: none; border-top: 1px dashed rgba(15, 23, 42, 0.2);"/>
+        Nhiệt độ TB tháng: <strong>${d.avgTemp?.toFixed(2) || 0}°C</strong><br/>
+        <span style="color: #be123c;">▲ Nơi nóng nhất:</span> ${d.highestLoc?.loc || "--"} (${d.highestLoc?.avg?.toFixed(2) || 0}°C)<br/>
+        <span style="color: #0369a1;">▼ Nơi lạnh nhất:</span> ${d.lowestLoc?.loc || "--"} (${d.lowestLoc?.avg?.toFixed(2) || 0}°C)
+      `);
+      updateTooltipPosition(event, tooltip);
+    })
+    .on("mousemove", (event) => updateTooltipPosition(event, tooltip))
+    .on("mouseleave", function (event) {
+      event.stopPropagation();
+      d3.select(this).attr("r", 4.5).attr("filter", null);
+      tooltip.style("opacity", 0);
+    });
   };
 
-  // Render lần đầu tiên với "Tất cả các vùng"
   renderChart("All");
 
-  // Bắt sự kiện khi người dùng thay đổi Dropdown
-  select.on("change", function () {
-    renderChart(this.value);
+  select.on("change", (event) => {
+    const val = event.target.value;
+    if (val) renderChart(val);
   });
 });

@@ -1,21 +1,35 @@
+// --- CẤU HÌNH 6 LOẠI THỜI TIẾT KÈM ICON VÀ MÀU SẮC DỊU MẮT ---
+const weatherConfig = {
+  "Sunny": { icon: "☀️", color: "#FFB703" },         
+  "Cloudy": { icon: "☁️", color: "#D6DCE5" },        
+  "Fog/Mist": { icon: "🌫️", color: "#9AA5B1" },      
+  "Light rain": { icon: "🌦️", color: "#2EC4B6" },    
+  "Heavy rain": { icon: "🌧️", color: "#3A86FF" },    
+  "Thunderstorm": { icon: "⛈️", color: "#8338EC" }   
+};
+
+// Hàm lấy màu & icon (Nếu xuất hiện thời tiết ngoài 6 loại này sẽ dùng màu/icon mặc định)
+const getWeatherColor = (weather) => weatherConfig[weather] ? weatherConfig[weather].color : "#14b8a6";
+const getWeatherIcon = (weather) => weatherConfig[weather] ? weatherConfig[weather].icon : "🌤️";
+
+// Hàm định dạng Tháng-Năm để hiển thị
+const formatMonthDisplay = (str) => {
+  if (!str) return "--";
+  const parts = str.split("-");
+  return parts.length === 2 ? `${parts[1]}-${parts[0]}` : str;
+};
+
 // Hàm tính toán và chống tràn tooltip
 const updateTooltipPosition = (event, tooltipElement) => {
   const node = tooltipElement.node();
   const tooltipWidth = node.offsetWidth || 250;
   const tooltipHeight = node.offsetHeight || 150;
 
-  let x = event.pageX + 15;
-  let y = event.pageY - (tooltipHeight / 2);
+  let x = event.pageX + 12;
+  let y = event.pageY + 12;
 
-  if (x + tooltipWidth > window.innerWidth - 20) {
-    x = event.pageX - tooltipWidth - 15;
-  }
-  if (y + tooltipHeight > window.innerHeight - 20) {
-    y = window.innerHeight - tooltipHeight - 20;
-  }
-  if (y < 20) {
-    y = 20;
-  }
+  if (x + tooltipWidth > window.innerWidth - 20) x = event.pageX - tooltipWidth - 12;
+  if (y + tooltipHeight > window.innerHeight - 20) y = event.pageY - tooltipHeight - 12;
 
   tooltipElement.style("left", `${x}px`).style("top", `${y}px`);
 };
@@ -29,16 +43,15 @@ svg.attr("viewBox", `0 0 ${width} ${height}`);
 
 const tooltip = d3.select("#tooltip");
 
-// Tạo các group
 // Biểu đồ nằm lệch trái 1 chút để nhường chỗ cho chú giải bên phải
 const chartGroup = svg.append("g").attr("transform", `translate(${width / 2 - 100}, ${height / 2})`);
-const legendGroup = svg.append("g").attr("transform", `translate(${width - 280}, 60)`);
+const legendGroup = svg.append("g").attr("transform", `translate(${width - 250}, 60)`);
 
 Promise.all([
   d3.csv("df_weather_fixed_utf8.csv")
 ]).then(([csvData]) => {
   
-  // 1. Làm sạch dữ liệu
+  // 1. Làm sạch dữ liệu (vẫn giữ YYYY-MM để D3 lọc thời gian chuẩn xác)
   const data = csvData
     .map((row) => {
       const dateObj = new Date(row["Date"]);
@@ -50,11 +63,6 @@ Promise.all([
       };
     })
     .filter((row) => row.weather && row.region);
-
-  // Khởi tạo thang màu cố định cho từng loại thời tiết 
-  // (đảm bảo màu không đổi khi filter)
-  const allWeathers = Array.from(new Set(data.map(d => d.weather)));
-  const colorScale = d3.scaleOrdinal(d3.schemeTableau10).domain(allWeathers);
 
   // 2. Thiết lập bộ lọc (Filter)
   const regions = Array.from(new Set(data.map((d) => d.region))).sort();
@@ -68,7 +76,7 @@ Promise.all([
   const populateSelect = (selectElement, values, selectedValue) => {
     selectElement.selectAll("option").remove();
     values.forEach((m) => {
-      selectElement.append("option").attr("value", m).text(m);
+      selectElement.append("option").attr("value", m).text(formatMonthDisplay(m));
     });
     if (values.includes(selectedValue)) {
       selectElement.property("value", selectedValue);
@@ -95,7 +103,6 @@ Promise.all([
     populateSelect(endSelect, allowedEndMonths, endVal);
   };
 
-  // Khởi tạo giá trị mặc định cho Dropdown
   updateSelectRanges();
 
   // 3. Hàm Render Biểu Đồ
@@ -104,7 +111,6 @@ Promise.all([
     let startVal = startSelect.property("value");
     let endVal = endSelect.property("value");
 
-    // Lọc dữ liệu
     const filteredData = data.filter((d) => {
       const matchRegion = selectedRegion === "All" || d.region === selectedRegion;
       const matchTime = d.monthStr >= startVal && d.monthStr <= endVal;
@@ -126,7 +132,6 @@ Promise.all([
       const count = records.length;
       const percentage = (count / totalRecords) * 100;
       
-      // Đếm số lần xuất hiện ở mỗi tỉnh
       const provGroup = Array.from(d3.group(records, d => d.location), ([loc, recs]) => ({
         loc, count: recs.length
       })).sort((a, b) => a.count - b.count);
@@ -140,18 +145,17 @@ Promise.all([
       };
     }).sort((a, b) => b.count - a.count); // Giảm dần
 
-    // Cập nhật Thống kê nổi bật
+    // Cập nhật Thống kê nổi bật (kèm Ký hiệu)
     const highest = weatherStats[0];
     const lowest = weatherStats[weatherStats.length - 1];
 
-    d3.select("#highest-weather").html(`${highest.weather} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${highest.count} lần - ${highest.percentage.toFixed(1)}%)</span>`);
-    d3.select("#lowest-weather").html(`${lowest.weather} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${lowest.count} lần - ${lowest.percentage.toFixed(1)}%)</span>`);
+    d3.select("#highest-weather").html(`${getWeatherIcon(highest.weather)} ${highest.weather} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${highest.count} lần - ${highest.percentage.toFixed(1)}%)</span>`);
+    d3.select("#lowest-weather").html(`${getWeatherIcon(lowest.weather)} ${lowest.weather} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${lowest.count} lần - ${lowest.percentage.toFixed(1)}%)</span>`);
 
     // Vẽ Pie Chart
     const pie = d3.pie().value(d => d.count).sort(null);
-    const arc = d3.arc().innerRadius(0).outerRadius(radius); // Pie chart (inner = 0)
+    const arc = d3.arc().innerRadius(0).outerRadius(radius); 
     
-    // Liên kết dữ liệu
     const arcs = chartGroup.selectAll(".arc")
       .data(pie(weatherStats), d => d.data.weather);
 
@@ -159,41 +163,34 @@ Promise.all([
 
     arcsEnter.append("path")
       .attr("class", "arc-path")
-      .attr("fill", d => colorScale(d.data.weather))
+      .attr("fill", d => getWeatherColor(d.data.weather)) 
       .attr("d", arc)
-      // Hiệu ứng bắt đầu xoay/vẽ
       .each(function(d) { this._current = d; }) 
       .on("mouseenter", function(event, d) {
-        // Highlight logic
         chartGroup.selectAll(".arc-path").classed("dimmed", true);
         d3.select(this).classed("dimmed", false)
           .transition().duration(200)
-          .attr("transform", "scale(1.05)"); // Phóng to lát cắt
+          .attr("transform", "scale(1.05)"); 
 
-        // Cập nhật tooltip
         let tooltipContent = `
-          <strong style="font-size: 14px;">☀️ ${d.data.weather}</strong>
+          <strong style="font-size: 15px;">${getWeatherIcon(d.data.weather)} ${d.data.weather}</strong>
           <hr style="margin: 6px 0; border: none; border-top: 1px dashed rgba(15, 23, 42, 0.2);"/>
           Tỷ lệ xuất hiện: <strong>${d.data.percentage.toFixed(2)}%</strong> (${d.data.count} lần)<br/>
-          <span style="color: #be123c;">▲ Nhiều nhất:</span> ${d.data.maxProv.loc} (${d.data.maxProv.count} lần)<br/>
-          <span style="color: #0369a1;">▼ Ít nhất:</span> ${d.data.minProv.loc} (${d.data.minProv.count} lần)
+          <span style="color: #be123c;">▲ Xuất hiện nhiều nhất:</span> ${d.data.maxProv.loc} (${d.data.maxProv.count} lần)<br/>
+          <span style="color: #0369a1;">▼ Xuất hiện ít nhất:</span> ${d.data.minProv.loc} (${d.data.minProv.count} lần)
         `;
         tooltip.style("opacity", 1).html(tooltipContent);
         updateTooltipPosition(event, tooltip);
       })
-      .on("mousemove", function(event) {
-        updateTooltipPosition(event, tooltip);
-      })
+      .on("mousemove", (event) => updateTooltipPosition(event, tooltip))
       .on("mouseleave", function() {
-        // Hủy highlight
         chartGroup.selectAll(".arc-path").classed("dimmed", false);
         d3.select(this)
           .transition().duration(200)
-          .attr("transform", "scale(1)"); // Thu về bình thường
+          .attr("transform", "scale(1)"); 
         tooltip.style("opacity", 0);
       });
 
-    // Cập nhật và Xóa Path cũ
     arcs.select("path").transition().duration(750)
       .attrTween("d", function(d) {
         const i = d3.interpolate(this._current, d);
@@ -209,23 +206,42 @@ Promise.all([
 
     const legendEnter = legend.enter().append("g")
       .attr("class", "legend-item")
-      .attr("transform", (d, i) => `translate(0, ${i * 25})`);
+      .attr("transform", (d, i) => `translate(0, ${i * 28})`)
+      // ==========================================
+      // THÊM LOGIC HOVER TỪ CHÚ THÍCH SANG BIỂU ĐỒ
+      // ==========================================
+      .on("mouseenter", function(event, d) {
+        const targetWeather = d.weather;
+        
+        chartGroup.selectAll(".arc-path")
+          .classed("dimmed", p => p.data.weather !== targetWeather)
+          .filter(p => p.data.weather === targetWeather)
+          .transition().duration(200)
+          .attr("transform", "scale(1.05)"); 
+      })
+      .on("mouseleave", function() {
+        chartGroup.selectAll(".arc-path")
+          .classed("dimmed", false)
+          .transition().duration(200)
+          .attr("transform", "scale(1)");
+      });
 
     legendEnter.append("rect")
       .attr("width", 16)
       .attr("height", 16)
       .attr("rx", 4)
-      .attr("fill", d => colorScale(d.weather));
+      .attr("fill", d => getWeatherColor(d.weather)); 
 
     legendEnter.append("text")
       .attr("x", 26)
-      .attr("y", 12)
-      .style("font-size", "13px")
+      .attr("y", 13)
+      .style("font-size", "14px")
+      .style("font-weight", "600")
       .style("fill", "#334155")
-      .text(d => `${d.weather} (${d.percentage.toFixed(1)}%)`);
+      .text(d => `${getWeatherIcon(d.weather)} ${d.weather} (${d.percentage.toFixed(1)}%)`); 
 
     legend.transition().duration(750)
-      .attr("transform", (d, i) => `translate(0, ${i * 25})`);
+      .attr("transform", (d, i) => `translate(0, ${i * 28})`);
       
     legend.select("text")
       .text(d => `${d.weather} (${d.percentage.toFixed(1)}%)`);
@@ -233,10 +249,8 @@ Promise.all([
     legend.exit().remove();
   };
 
-  // Khởi chạy biểu đồ lần đầu
   renderChart();
 
-  // Gắn Event cho các filter
   regionSelect.on("change", renderChart);
   startSelect.on("change", () => {
     updateSelectRanges("start");

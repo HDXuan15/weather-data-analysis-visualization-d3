@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Task 1 - Nhiệt độ trung bình theo thời gian</title>
+    <title>Task 1 - Nhiệt độ trung bình theo thời gian và vùng</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="style.css" />
     <style>
@@ -29,50 +29,120 @@
       }
       .chart-controls {
         display: flex;
-        flex-wrap: wrap;
+        align-items: center;
         gap: 12px;
         margin: 18px 0 18px;
-        align-items: center;
+        background: rgba(255, 255, 255, 0.88);
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid var(--surface-border, #e2e8f0);
+        box-shadow: var(--shadow, 0 4px 6px -1px rgba(0,0,0,0.1));
       }
       .filter-select {
         border: 1px solid rgba(15, 23, 42, 0.12);
         border-radius: 8px;
-        padding: 10px 16px;
-        background: rgba(255, 255, 255, 0.92);
+        padding: 8px 16px;
+        background: #fff;
         color: #0f172a;
         font-size: 14px;
         font-weight: 600;
         cursor: pointer;
         outline: none;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
       }
       .summary-box {
         margin-bottom: 20px;
-        padding: 16px;
-        background: rgba(255, 255, 255, 0.88);
-        border: 1px solid var(--surface-border);
-        border-radius: 16px;
-        box-shadow: var(--shadow);
-        font-size: 15px;
-        color: var(--ink);
-        line-height: 1.6;
+        display: flex;
+        gap: 20px;
       }
+      .stat-item {
+        flex: 1;
+        padding: 16px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid var(--surface-border, #e2e8f0);
+        box-shadow: var(--shadow, 0 4px 6px -1px rgba(0,0,0,0.1));
+      }
+      
+      .chart-body {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      .chart-svg-wrapper {
+        flex: 1;
+        min-width: 0; 
+        background: rgba(255, 255, 255, 0.88);
+        border-radius: 16px;
+        border: 1px solid var(--surface-border, #e2e8f0);
+        box-shadow: var(--shadow, 0 4px 6px -1px rgba(0,0,0,0.1));
+        padding: 10px;
+      }
+      
+      .legend-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 150px; 
+        flex-shrink: 0; 
+        background: rgba(255, 255, 255, 0.88);
+        padding: 16px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--surface-border, #e2e8f0);
+        box-shadow: var(--shadow, 0 4px 6px -1px rgba(0,0,0,0.1));
+      }
+      .legend-title {
+        font-weight: 700;
+        font-size: 13px; 
+        color: #1e293b;
+        margin-bottom: 6px;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 6px;
+        text-align: center;
+      }
+      .legend-item {
+        display: flex;
+        align-items: flex-start; 
+        gap: 8px;
+        font-size: 12px; 
+        line-height: 1.4; 
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        transition: opacity 200ms ease;
+      }
+      .legend-item:hover {
+        opacity: 0.7;
+      }
+      .legend-color {
+        width: 14px; 
+        height: 14px;
+        border-radius: 4px;
+        flex-shrink: 0; 
+        margin-top: 1px; 
+      }
+      
       .line {
         fill: none;
-        stroke: #8b5cf6;
         stroke-width: 3;
         stroke-linecap: round;
         stroke-linejoin: round;
+        transition: stroke-width 200ms ease, opacity 200ms ease;
+        cursor: pointer;
+      }
+      .line:hover {
+        stroke-width: 6;
       }
       .dot {
-        fill: #8b5cf6;
         stroke: #fff;
-        stroke-width: 2;
+        stroke-width: 1.5;
         cursor: pointer;
         transition: all 120ms ease;
       }
       .dot:hover {
         stroke: #0f172a;
+      }
+      .dimmed {
+        opacity: 0.1 !important;
       }
     </style>
   </head>
@@ -85,18 +155,33 @@
       <div class="chart-controls">
         <label for="region-filter" style="font-weight: 600; color: #334155;">Lọc theo vùng (Region):</label>
         <select id="region-filter" class="filter-select">
-          <option value="All">Tất cả các vùng</option>
+          <option value="All">Hiển thị tất cả các vùng</option>
         </select>
       </div>
 
-      <div id="summary-box" class="summary-box"></div>
+      <div class="summary-box">
+        <div class="stat-item">
+          <div id="highest-title" style="color: #be123c; font-weight: bold; font-size: 13px; text-transform: uppercase;">🔥 Vùng có nhiệt độ TB cao nhất</div>
+          <div id="highest-val" style="font-size: 16px; font-weight: 700; margin-top: 8px;">--</div>
+        </div>
+        <div class="stat-item">
+          <div id="lowest-title" style="color: #0369a1; font-weight: bold; font-size: 13px; text-transform: uppercase;">❄️ Vùng có nhiệt độ TB thấp nhất</div>
+          <div id="lowest-val" style="font-size: 16px; font-weight: 700; margin-top: 8px;">--</div>
+        </div>
+      </div>
 
-      <div class="chart-card chart-card--wide">
-        <svg id="chart1" style="max-width: 100%; height: auto"></svg>
+      <div class="chart-body">
+        <div class="chart-svg-wrapper">
+          <svg id="chart1" style="width: 100%; height: auto"></svg>
+        </div>
+        
+        <div id="legend-container" class="legend-container">
+          <div class="legend-title">Chú thích Vùng</div>
+        </div>
       </div>
     </div>
 
-    <div id="tooltip"></div>
+    <div id="tooltip" style="position: absolute; opacity: 0; pointer-events: none; background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; font-size: 13px; line-height: 1.5; z-index: 1000; transition: opacity 150ms ease;"></div>
 
     <script src="task1.js"></script>
   </body>
