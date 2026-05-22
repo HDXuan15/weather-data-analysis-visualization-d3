@@ -8,18 +8,15 @@ const weatherConfig = {
   "Thunderstorm": { icon: "⛈️", color: "#8338EC" }   
 };
 
-// Hàm lấy màu & icon (Nếu xuất hiện thời tiết ngoài 6 loại này sẽ dùng màu/icon mặc định)
 const getWeatherColor = (weather) => weatherConfig[weather] ? weatherConfig[weather].color : "#14b8a6";
 const getWeatherIcon = (weather) => weatherConfig[weather] ? weatherConfig[weather].icon : "🌤️";
 
-// Hàm định dạng Tháng-Năm để hiển thị
 const formatMonthDisplay = (str) => {
   if (!str) return "--";
   const parts = str.split("-");
   return parts.length === 2 ? `${parts[1]}-${parts[0]}` : str;
 };
 
-// Hàm tính toán và chống tràn tooltip
 const updateTooltipPosition = (event, tooltipElement) => {
   const node = tooltipElement.node();
   const tooltipWidth = node.offsetWidth || 250;
@@ -34,24 +31,24 @@ const updateTooltipPosition = (event, tooltipElement) => {
   tooltipElement.style("left", `${x}px`).style("top", `${y}px`);
 };
 
-const svg = d3.select("#chart7");
-const width = 900;
-const height = 550;
-const radius = Math.min(width, height) / 2.5;
+// Cấu hình không gian SVG tối ưu (Không cần chừa lề phải quá rộng vì chú giải đã tách riêng)
+const width = 750;
+const height = 460;
+const margin = { top: 15, right: 35, bottom: 45, left: 135 };
+const innerWidth = width - margin.left - margin.right;
+const innerHeight = height - margin.top - margin.bottom;
 
-svg.attr("viewBox", `0 0 ${width} ${height}`);
-
+const svg = d3.select("#chart7").attr("viewBox", `0 0 ${width} ${height}`);
 const tooltip = d3.select("#tooltip");
 
-// Biểu đồ nằm lệch trái 1 chút để nhường chỗ cho chú giải bên phải
-const chartGroup = svg.append("g").attr("transform", `translate(${width / 2 - 100}, ${height / 2})`);
-const legendGroup = svg.append("g").attr("transform", `translate(${width - 250}, 60)`);
+const chartGroup = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
+const xAxisGroup = chartGroup.append("g").attr("transform", `translate(0, ${innerHeight})`);
+const yAxisGroup = chartGroup.append("g");
 
 Promise.all([
   d3.csv("df_weather_fixed_utf8.csv")
 ]).then(([csvData]) => {
   
-  // 1. Làm sạch dữ liệu (vẫn giữ YYYY-MM để D3 lọc thời gian chuẩn xác)
   const data = csvData
     .map((row) => {
       const dateObj = new Date(row["Date"]);
@@ -64,7 +61,7 @@ Promise.all([
     })
     .filter((row) => row.weather && row.region);
 
-  // 2. Thiết lập bộ lọc (Filter)
+  // Thiết lập bộ lọc vùng miền và thời gian
   const regions = Array.from(new Set(data.map((d) => d.region))).sort();
   const regionSelect = d3.select("#region-filter");
   regions.forEach((r) => regionSelect.append("option").attr("value", r).text(r));
@@ -89,12 +86,8 @@ Promise.all([
     let startVal = startSelect.property("value") || months[0];
     let endVal = endSelect.property("value") || months[months.length - 1];
 
-    if (changed === "start" && startVal > endVal) {
-      endVal = startVal;
-    }
-    if (changed === "end" && endVal < startVal) {
-      startVal = endVal;
-    }
+    if (changed === "start" && startVal > endVal) endVal = startVal;
+    if (changed === "end" && endVal < startVal) startVal = endVal;
 
     const allowedStartMonths = months.filter((m) => m <= endVal);
     const allowedEndMonths = months.filter((m) => m >= startVal);
@@ -105,11 +98,12 @@ Promise.all([
 
   updateSelectRanges();
 
-  // 3. Hàm Render Biểu Đồ
+  // --- HÀM DRAW/UPDATE ĐỒ THỊ VÀ CHÚ GIẢI ĐỘC LẬP ---
   const renderChart = () => {
     const selectedRegion = regionSelect.property("value");
-    let startVal = startSelect.property("value");
-    let endVal = endSelect.property("value");
+    const startVal = startSelect.property("value");
+    const endVal = endSelect.property("value");
+    const sortOrder = d3.select("#sort-filter").property("value");
 
     const filteredData = data.filter((d) => {
       const matchRegion = selectedRegion === "All" || d.region === selectedRegion;
@@ -118,140 +112,194 @@ Promise.all([
     });
 
     const totalRecords = filteredData.length;
+    const groupedMap = d3.group(filteredData, d => d.weather);
 
-    if (totalRecords === 0) {
-      d3.select("#highest-weather").text("Không có dữ liệu");
-      d3.select("#lowest-weather").text("Không có dữ liệu");
-      chartGroup.selectAll("*").remove();
-      legendGroup.selectAll("*").remove();
-      return;
+    // Tính toán số liệu dựa trên 6 nhóm cố định
+    let weatherStats = Object.keys(weatherConfig).map((weather) => {
+      const records = groupedMap.get(weather) || [];
+      const count = records.length;
+      const percentage = totalRecords > 0 ? (count / totalRecords) * 100 : 0;
+      
+      let minProv = { loc: "Không có", count: 0 };
+      let maxProv = { loc: "Không có", count: 0 };
+
+      if (count > 0) {
+        const provGroup = Array.from(d3.group(records, d => d.location), ([loc, recs]) => ({
+          loc, count: recs.length
+        })).sort((a, b) => a.count - b.count);
+        minProv = provGroup[0];
+        maxProv = provGroup[provGroup.length - 1];
+      }
+
+      return { weather, count, percentage, minProv, maxProv };
+    });
+
+    // Sắp xếp thứ tự mảng dữ liệu dựa trên Sort Bộ Lọc
+    if (sortOrder === "asc") {
+      weatherStats.sort((a, b) => a.count - b.count);
+    } else {
+      weatherStats.sort((a, b) => b.count - a.count);
     }
 
-    // Tính toán Tần suất & Province Max/Min cho từng loại thời tiết
-    const weatherStats = Array.from(d3.group(filteredData, d => d.weather), ([weather, records]) => {
-      const count = records.length;
-      const percentage = (count / totalRecords) * 100;
-      
-      const provGroup = Array.from(d3.group(records, d => d.location), ([loc, recs]) => ({
-        loc, count: recs.length
-      })).sort((a, b) => a.count - b.count);
+    // Cập nhật khối thống kê tổng quan (Top Box)
+    if (totalRecords > 0) {
+      const sortedForSummary = [...weatherStats].sort((a, b) => b.count - a.count);
+      const highest = sortedForSummary[0];
+      const lowest = sortedForSummary[sortedForSummary.length - 1];
 
-      return {
-        weather,
-        count,
-        percentage,
-        minProv: provGroup[0],
-        maxProv: provGroup[provGroup.length - 1]
-      };
-    }).sort((a, b) => b.count - a.count); // Giảm dần
+      d3.select("#highest-weather").html(`${getWeatherIcon(highest.weather)} ${highest.weather} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${highest.count} lần - ${highest.percentage.toFixed(1)}%)</span>`);
+      d3.select("#lowest-weather").html(`${getWeatherIcon(lowest.weather)} ${lowest.weather} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${lowest.count} lần - ${lowest.percentage.toFixed(1)}%)</span>`);
+    } else {
+      d3.select("#highest-weather").text("Không có dữ liệu");
+      d3.select("#lowest-weather").text("Không có dữ liệu");
+    }
 
-    // Cập nhật Thống kê nổi bật (kèm Ký hiệu)
-    const highest = weatherStats[0];
-    const lowest = weatherStats[weatherStats.length - 1];
+    // Thang đo tọa độ Trục
+    const maxCount = d3.max(weatherStats, d => d.count);
+    const xScale = d3.scaleLinear()
+      .domain([0, maxCount > 0 ? maxCount * 1.12 : 10]) 
+      .range([0, innerWidth]);
 
-    d3.select("#highest-weather").html(`${getWeatherIcon(highest.weather)} ${highest.weather} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${highest.count} lần - ${highest.percentage.toFixed(1)}%)</span>`);
-    d3.select("#lowest-weather").html(`${getWeatherIcon(lowest.weather)} ${lowest.weather} <span style="font-weight:normal; font-size:15px; color:#64748b;">(${lowest.count} lần - ${lowest.percentage.toFixed(1)}%)</span>`);
+    const yScale = d3.scaleBand()
+      .domain(weatherStats.map(d => d.weather))
+      .range([0, innerHeight])
+      .padding(0.3);
 
-    // Vẽ Pie Chart
-    const pie = d3.pie().value(d => d.count).sort(null);
-    const arc = d3.arc().innerRadius(0).outerRadius(radius); 
+    xAxisGroup.transition().duration(750).call(d3.axisBottom(xScale).ticks(5));
+    yAxisGroup.transition().duration(750).call(d3.axisLeft(yScale));
     
-    const arcs = chartGroup.selectAll(".arc")
-      .data(pie(weatherStats), d => d.data.weather);
+    yAxisGroup.selectAll(".tick text")
+      .text(d => `${getWeatherIcon(d)} ${d}`)
+      .style("font-size", "13px")
+      .style("font-weight", "600")
+      .style("fill", "#475569");
 
-    const arcsEnter = arcs.enter().append("g").attr("class", "arc");
+    // --- VẼ THANH CỘT ĐỒ THỊ (BARS) ---
+    const bars = chartGroup.selectAll(".bar-rect")
+      .data(weatherStats, d => d.weather);
 
-    arcsEnter.append("path")
-      .attr("class", "arc-path")
-      .attr("fill", d => getWeatherColor(d.data.weather)) 
-      .attr("d", arc)
-      .each(function(d) { this._current = d; }) 
+    const barsEnter = bars.enter().append("rect")
+      .attr("class", "bar-rect")
+      .attr("x", 0)
+      .attr("y", d => yScale(d.weather))
+      .attr("height", yScale.bandwidth())
+      .attr("width", 0) 
+      .attr("fill", d => getWeatherColor(d.weather))
+      .attr("rx", 5); 
+
+    bars.merge(barsEnter)
       .on("mouseenter", function(event, d) {
-        chartGroup.selectAll(".arc-path").classed("dimmed", true);
-        d3.select(this).classed("dimmed", false)
-          .transition().duration(200)
-          .attr("transform", "scale(1.05)"); 
+        chartGroup.selectAll(".bar-rect").classed("dimmed", true);
+        d3.select(this).classed("dimmed", false);
+        
+        // Đồng bộ hiệu ứng làm mờ sang các thẻ HTML Chú giải bên ngoài card riêng biệt
+        d3.selectAll(".legend-item").classed("dimmed", l => l.weather !== d.weather);
 
         let tooltipContent = `
-          <strong style="font-size: 15px;">${getWeatherIcon(d.data.weather)} ${d.data.weather}</strong>
+          <strong style="font-size: 15px;">${getWeatherIcon(d.weather)} ${d.weather}</strong>
           <hr style="margin: 6px 0; border: none; border-top: 1px dashed rgba(15, 23, 42, 0.2);"/>
-          Tỷ lệ xuất hiện: <strong>${d.data.percentage.toFixed(2)}%</strong> (${d.data.count} lần)<br/>
-          <span style="color: #be123c;">▲ Xuất hiện nhiều nhất:</span> ${d.data.maxProv.loc} (${d.data.maxProv.count} lần)<br/>
-          <span style="color: #0369a1;">▼ Xuất hiện ít nhất:</span> ${d.data.minProv.loc} (${d.data.minProv.count} lần)
+          Số lần xuất hiện: <strong>${d.count} lần</strong><br/>
+          Tỷ lệ xuất hiện: <strong>${d.percentage.toFixed(2)}%</strong><br/>
+          <span style="color: #be123c;">▲ Nhiều nhất:</span> ${d.maxProv.loc} (${d.maxProv.count} lần)<br/>
+          <span style="color: #0369a1;">▼ Ít nhất:</span> ${d.minProv.loc} (${d.minProv.count} lần)
         `;
         tooltip.style("opacity", 1).html(tooltipContent);
         updateTooltipPosition(event, tooltip);
       })
       .on("mousemove", (event) => updateTooltipPosition(event, tooltip))
       .on("mouseleave", function() {
-        chartGroup.selectAll(".arc-path").classed("dimmed", false);
-        d3.select(this)
-          .transition().duration(200)
-          .attr("transform", "scale(1)"); 
+        chartGroup.selectAll(".bar-rect").classed("dimmed", false);
+        d3.selectAll(".legend-item").classed("dimmed", false);
         tooltip.style("opacity", 0);
-      });
+      })
+      .transition().duration(750)
+      .attr("y", d => yScale(d.weather))
+      .attr("height", yScale.bandwidth())
+      .attr("width", d => xScale(d.count));
 
-    arcs.select("path").transition().duration(750)
-      .attrTween("d", function(d) {
-        const i = d3.interpolate(this._current, d);
-        this._current = i(1);
-        return t => arc(i(t));
-      });
+    bars.exit().remove();
 
-    arcs.exit().remove();
-
-    // Vẽ Legend (Chú giải)
-    const legend = legendGroup.selectAll(".legend-item")
+    // --- HIỂN THỊ TEXT PHẦN TRĂM (%) TRÊN ĐẦU CỘT ---
+    const labels = chartGroup.selectAll(".bar-label")
       .data(weatherStats, d => d.weather);
 
-    const legendEnter = legend.enter().append("g")
+    const labelsEnter = labels.enter().append("text")
+      .attr("class", "bar-label")
+      .attr("dy", "0.36em")
+      .style("font-size", "12px")
+      .style("font-weight", "700")
+      .attr("x", 0)
+      .attr("opacity", 0);
+
+    labels.merge(labelsEnter)
+      .text(d => `${d.percentage.toFixed(1)}%`)
+      .transition().duration(750)
+      .attr("y", d => yScale(d.weather) + yScale.bandwidth() / 2)
+      .attr("x", d => {
+        const barW = xScale(d.count);
+        return barW > 45 ? barW - 40 : barW + 8;
+      })
+      .style("fill", d => {
+        const barW = xScale(d.count);
+        return barW > 45 ? "#ffffff" : "#334155";
+      })
+      .attr("opacity", 1);
+
+    labels.exit().remove();
+
+    // --- RENDER DANH SÁCH CHÚ GIẢI THÀNH PHẦN TỬ HTML RIÊNG BIỆT ---
+    const legendItems = d3.select("#chart-legend")
+      .selectAll(".legend-item")
+      .data(weatherStats, d => d.weather);
+
+    // Khởi tạo khung DOM cho dòng chú thích mới
+    const legendEnter = legendItems.enter().append("div")
       .attr("class", "legend-item")
-      .attr("transform", (d, i) => `translate(0, ${i * 28})`)
-      // ==========================================
-      // THÊM LOGIC HOVER TỪ CHÚ THÍCH SANG BIỂU ĐỒ
-      // ==========================================
       .on("mouseenter", function(event, d) {
-        const targetWeather = d.weather;
-        
-        chartGroup.selectAll(".arc-path")
-          .classed("dimmed", p => p.data.weather !== targetWeather)
-          .filter(p => p.data.weather === targetWeather)
-          .transition().duration(200)
-          .attr("transform", "scale(1.05)"); 
+        // Rà chuột vào chú giải chữ -> Làm nổi bật cột tương ứng trong SVG biểu đồ
+        chartGroup.selectAll(".bar-rect").classed("dimmed", p => p.weather !== d.weather);
+        d3.selectAll(".legend-item").classed("dimmed", p => p.weather !== d.weather);
       })
       .on("mouseleave", function() {
-        chartGroup.selectAll(".arc-path")
-          .classed("dimmed", false)
-          .transition().duration(200)
-          .attr("transform", "scale(1)");
+        chartGroup.selectAll(".bar-rect").classed("dimmed", false);
+        d3.selectAll(".legend-item").classed("dimmed", false);
       });
 
-    legendEnter.append("rect")
-      .attr("width", 16)
-      .attr("height", 16)
-      .attr("rx", 4)
-      .attr("fill", d => getWeatherColor(d.weather)); 
+    // Ô màu nhỏ vuông góc tròn giống hệt hình minh họa của bạn
+    legendEnter.append("div")
+      .attr("class", "legend-color-box")
+      .style("width", "16px")
+      .style("height", "16px")
+      .style("border-radius", "4px")
+      .style("flex-shrink", "0");
 
-    legendEnter.append("text")
-      .attr("x", 26)
-      .attr("y", 13)
+    // Nội dung chữ nhãn thời tiết kèm Icon và Tổng số lần
+    legendEnter.append("span")
+      .attr("class", "legend-text-label")
       .style("font-size", "14px")
       .style("font-weight", "600")
-      .style("fill", "#334155")
-      .text(d => `${getWeatherIcon(d.weather)} ${d.weather} (${d.percentage.toFixed(1)}%)`); 
+      .style("color", "#475569");
 
-    legend.transition().duration(750)
-      .attr("transform", (d, i) => `translate(0, ${i * 28})`);
-      
-    legend.select("text")
-      .text(d => `${d.weather} (${d.percentage.toFixed(1)}%)`);
+    // Hợp nhất dữ liệu mới cũ và đồng bộ hóa sắp xếp thứ tự hiển thị (DOM re-ordering)
+    const legendMerged = legendItems.merge(legendEnter);
+    
+    // Tự động hoán đổi vị trí thứ tự hiển thị trong HTML Card khi đổi bộ lọc Sắp xếp cột
+    legendMerged.order(); 
 
-    legend.exit().remove();
+    legendMerged.select(".legend-color-box")
+      .style("background-color", d => getWeatherColor(d.weather));
+
+    legendMerged.select(".legend-text-label")
+      .text(d => `${d.weather} (${d.count} lần)`);
+
+    legendItems.exit().remove();
   };
 
   renderChart();
 
+  // Sự kiện kích hoạt lại bộ lọc
   regionSelect.on("change", renderChart);
+  d3.select("#sort-filter").on("change", renderChart);
   startSelect.on("change", () => {
     updateSelectRanges("start");
     renderChart();

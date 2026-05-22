@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css" />
     <style>
       .chart-container {
-        max-width: 1000px;
+        max-width: 1100px;
         margin: 0 auto;
         padding: 20px;
       }
@@ -36,8 +36,8 @@
         background: rgba(255, 255, 255, 0.88);
         padding: 16px;
         border-radius: 16px;
-        border: 1px solid var(--surface-border, #e2e8f0);
-        box-shadow: var(--shadow, 0 4px 6px -1px rgba(0,0,0,0.1));
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
       }
       .filter-select {
         border: 1px solid rgba(15, 23, 42, 0.12);
@@ -61,31 +61,66 @@
         padding: 16px;
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.88);
-        border: 1px solid var(--surface-border, #e2e8f0);
-        box-shadow: var(--shadow, 0 4px 6px -1px rgba(0,0,0,0.1));
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
       }
-      .arc-path {
-        stroke: #ffffff;
-        stroke-width: 2px;
-        transition: all 200ms ease;
-        cursor: pointer;
+      
+      /* --- LAYOUT CHIA ĐÔI: BIỂU ĐỒ & CHÚ GIẢI TÁCH RỜI --- */
+      .chart-layout {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
       }
-      .dimmed {
-        opacity: 0.2 !important;
-        filter: grayscale(80%);
+      .chart-card {
+        flex: 1;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        border: 1px solid #e2e8f0;
+      }
+      .legend-card {
+        width: 280px;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        border: 1px solid #e2e8f0;
+      }
+      .legend-title {
+        margin-top: 0;
+        margin-bottom: 16px;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 12px;
+      }
+      .legend-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
       }
       .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
         cursor: pointer;
-        transition: opacity 200ms ease;
+        transition: all 200ms ease;
       }
-      .legend-item:hover {
-        opacity: 0.7;
+      
+      /* Hiệu ứng mờ diện rộng áp dụng chung cho cả cột và chữ chú giải */
+      .bar-rect, .legend-item {
+        transition: opacity 200ms ease, filter 200ms ease;
       }
-      /* Tooltip style được cố định ở đây */
+      .dimmed {
+        opacity: 0.15 !important;
+      }
+      
       #tooltip {
         position: absolute;
         opacity: 0;
-        pointer-events: none; /* Tránh lỗi chuột bắt nhầm tooltip */
+        pointer-events: none;
         background: rgba(255, 255, 255, 0.98);
         padding: 14px;
         border-radius: 10px;
@@ -96,6 +131,9 @@
         z-index: 1000;
         transition: opacity 150ms ease;
         color: #1e293b;
+      }
+      .domain, .tick line {
+        stroke: #cbd5e1;
       }
     </style>
   </head>
@@ -117,21 +155,36 @@
         <select id="start-month" class="filter-select"></select>
         <span style="font-weight: 600; color: #334155;">đến:</span>
         <select id="end-month" class="filter-select"></select>
+
+        <span style="border-left: 1px solid #cbd5e1; height: 24px; margin: 0 8px;"></span>
+
+        <label style="font-weight: 600; color: #334155;">Sắp xếp:</label>
+        <select id="sort-filter" class="filter-select">
+          <option value="desc">Số lần xuất hiện: Giảm dần</option>
+          <option value="asc">Số lần xuất hiện: Tăng dần</option>
+        </select>
       </div>
 
       <div class="summary-box">
         <div class="stat-item">
-          <div style="color: #ea580c; font-weight: bold; font-size: 13px; text-transform: uppercase;">Xuất hiện nhiều nhất</div>
+          <div style="color: #ea580c; font-weight: bold; font-size: 13px; text-transform: uppercase;">📈 Xuất hiện nhiều nhất</div>
           <div id="highest-weather" style="font-size: 18px; font-weight: 700; margin-top: 8px;">--</div>
         </div>
         <div class="stat-item">
-          <div style="color: #0284c7; font-weight: bold; font-size: 13px; text-transform: uppercase;">Xuất hiện ít nhất</div>
+          <div style="color: #0284c7; font-weight: bold; font-size: 13px; text-transform: uppercase;">📉 Xuất hiện ít nhất</div>
           <div id="lowest-weather" style="font-size: 18px; font-weight: 700; margin-top: 8px;">--</div>
         </div>
       </div>
 
-      <div class="chart-card chart-card--wide" style="display: flex; justify-content: center;">
-        <svg id="chart7" style="max-width: 100%; height: auto; min-height: 500px;"></svg>
+      <div class="chart-layout">
+        <div class="chart-card">
+          <svg id="chart7" style="width: 100%; height: auto; min-height: 480px;"></svg>
+        </div>
+        
+        <div class="legend-card">
+          <h3 class="legend-title">Chú giải</h3>
+          <div id="chart-legend" class="legend-list"></div>
+        </div>
       </div>
     </div>
 
