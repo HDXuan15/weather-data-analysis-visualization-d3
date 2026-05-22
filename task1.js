@@ -3,12 +3,14 @@ const updateTooltipPosition = (event, tooltipElement) => {
   const tooltipWidth = node.offsetWidth || 250;
   const tooltipHeight = node.offsetHeight || 150;
 
-  let x = event.pageX + 15;
-  let y = event.pageY - (tooltipHeight / 2);
+  let x = event.pageX;
+  let y = event.pageY;
 
-  if (x + tooltipWidth > window.innerWidth - 20) x = event.pageX - tooltipWidth - 15;
-  if (y + tooltipHeight > window.innerHeight - 20) y = window.innerHeight - tooltipHeight - 20;
-  if (y < 20) y = 20;
+  // Adjust if tooltip goes off-screen
+  if (x + tooltipWidth > window.innerWidth - 10) x = window.innerWidth - tooltipWidth - 10;
+  if (y + tooltipHeight > window.innerHeight - 10) y = window.innerHeight - tooltipHeight - 10;
+  if (x < 10) x = 10;
+  if (y < 10) y = 10;
 
   tooltipElement.style("left", `${x}px`).style("top", `${y}px`);
 };
@@ -187,11 +189,11 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
 
       // Cập nhật Tooltip của Line
       tooltip.style("opacity", 1).html(`
-        <strong style="font-size: 14px;">Vùng: ${d.region}</strong><br>
-        Nhiệt độ TB tất cả tháng: <strong>${d.overallAvg?.toFixed(2) || 0}°C</strong>
+        <strong style="font-size: 14px;">Vùng: ${d.region}</strong>
         <hr style="margin: 6px 0; border: none; border-top: 1px dashed rgba(15, 23, 42, 0.2);"/>
-        <span style="color: #be123c;">🔥 Tháng nóng nhất:</span> ${formatMonthDisplay(d.maxMonth?.monthStr)} (${d.maxMonth?.avgTemp?.toFixed(2) || 0}°C)<br>
-        <span style="color: #0369a1;">❄️ Tháng lạnh nhất:</span> ${formatMonthDisplay(d.minMonth?.monthStr)} (${d.minMonth?.avgTemp?.toFixed(2) || 0}°C)
+        Nhiệt độ TB tất cả tháng: <strong>${d.overallAvg?.toFixed(2) || 0}°C</strong><br/>
+        <span style="color: #be123c;">▲ Tháng nóng nhất:</span> ${formatMonthDisplay(d.maxMonth?.monthStr)} (${d.maxMonth?.avgTemp?.toFixed(2) || 0}°C)<br/>
+        <span style="color: #0369a1;">▼ Tháng lạnh nhất:</span> ${formatMonthDisplay(d.minMonth?.monthStr)} (${d.minMonth?.avgTemp?.toFixed(2) || 0}°C)
       `);
       updateTooltipPosition(event, tooltip);
     })
@@ -222,11 +224,11 @@ d3.csv("df_weather_fixed_utf8.csv").then((rawData) => {
       
       // Cập nhật Tooltip của Dot
       tooltip.style("opacity", 1).html(`
-        <strong>${d.region} - Tháng: ${formatMonthDisplay(d.monthStr)}</strong><br>
-        Nhiệt độ TB tháng: <strong>${d.avgTemp?.toFixed(2) || 0}°C</strong>
+        <strong>${d.region} - Tháng ${formatMonthDisplay(d.monthStr)}</strong>
         <hr style="margin: 6px 0; border: none; border-top: 1px dashed rgba(15, 23, 42, 0.2);"/>
-        <span style="color: #be123c;">▲ Nơi cao nhất:</span> ${d.highestLoc?.loc || "--"} (${d.highestLoc?.avg?.toFixed(2) || 0}°C)<br>
-        <span style="color: #0369a1;">▼ Nơi thấp nhất:</span> ${d.lowestLoc?.loc || "--"} (${d.lowestLoc?.avg?.toFixed(2) || 0}°C)
+        Nhiệt độ TB tháng: <strong>${d.avgTemp?.toFixed(2) || 0}°C</strong><br/>
+        <span style="color: #be123c;">▲ Nơi nóng nhất:</span> ${d.highestLoc?.loc || "--"} (${d.highestLoc?.avg?.toFixed(2) || 0}°C)<br/>
+        <span style="color: #0369a1;">▼ Nơi lạnh nhất:</span> ${d.lowestLoc?.loc || "--"} (${d.lowestLoc?.avg?.toFixed(2) || 0}°C)
       `);
       updateTooltipPosition(event, tooltip);
     })

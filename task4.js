@@ -8,34 +8,31 @@ const parseNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : NaN;
 };
 
-// Hàm định vị Tooltip siêu chống tràn
+// Hàm định dạng hiển thị thời gian từ YYYY-MM sang MM-YYYY
+const formatMonthDisplay = (str) => {
+  if (!str) return "--";
+  const parts = str.split("-");
+  if (parts.length === 2) {
+    return `${parts[1]}-${parts[0]}`;
+  }
+  return str;
+};
+
 const updateTooltipPosition = (event, tooltipElement) => {
   const node = tooltipElement.node();
-  const tooltipWidth = node.offsetWidth || 200;
-  const tooltipHeight = node.offsetHeight || 120;
+  const tooltipWidth = node.offsetWidth || 250;
+  const tooltipHeight = node.offsetHeight || 150;
 
-  // Mặc định xuất hiện ngay bên phải và ngang hàng với trỏ chuột
-  let x = event.pageX + 15;
-  let y = event.pageY - (tooltipHeight / 2);
+  let x = event.pageX;
+  let y = event.pageY;
 
-  // Nếu tràn lề phải màn hình -> lật tooltip sang TỪ TRÁI qua chuột
-  if (x + tooltipWidth > window.innerWidth - 20) {
-    x = event.pageX - tooltipWidth - 15;
-  }
+  // Adjust if tooltip goes off-screen
+  if (x + tooltipWidth > window.innerWidth - 10) x = window.innerWidth - tooltipWidth - 10;
+  if (y + tooltipHeight > window.innerHeight - 10) y = window.innerHeight - tooltipHeight - 10;
+  if (x < 10) x = 10;
+  if (y < 10) y = 10;
 
-  // Nếu tràn lề dưới -> đẩy dịch lên
-  if (y + tooltipHeight > window.innerHeight - 20) {
-    y = window.innerHeight - tooltipHeight - 20;
-  }
-
-  // Nếu tràn lề trên (cắt mất phần trên cùng) -> đẩy xuống
-  if (y < 20) {
-    y = 20;
-  }
-
-  tooltipElement
-    .style("left", `${x}px`)
-    .style("top", `${y}px`);
+  tooltipElement.style("left", `${x}px`).style("top", `${y}px`);
 };
 
 const svg = d3.select("#chart4");
@@ -66,6 +63,7 @@ Promise.all([
       const dateObj = new Date(row["Date"]);
       return {
         dateObj: dateObj,
+        // GIỮ NGUYÊN dạng YYYY-MM để D3.js tính toán & lọc chính xác
         monthStr: dateObj.getFullYear() + "-" + String(dateObj.getMonth() + 1).padStart(2, '0'),
         location: row["Location.Name"],
         normLocation: normalizeName(row["Location.Name"]),
@@ -84,7 +82,8 @@ Promise.all([
   const populateSelect = (selectElement, values, selectedValue) => {
     selectElement.selectAll("option").remove();
     values.forEach((m) => {
-      selectElement.append("option").attr("value", m).text(m);
+      // Giá trị value giữ nguyên YYYY-MM, nhưng text hiển thị ra là MM-YYYY
+      selectElement.append("option").attr("value", m).text(formatMonthDisplay(m));
     });
     if (values.includes(selectedValue)) {
       selectElement.property("value", selectedValue);
@@ -122,8 +121,8 @@ Promise.all([
   
   // 1. Tạo và vẽ lưới kinh vĩ độ ẩn dưới bản đồ
   const graticule = d3.geoGraticule()
-    .extent([[100, 8], [112, 24]]) // Giới hạn tọa độ khu vực Việt Nam
-    .step([1, 1]);                 // Khoảng cách mỗi đường cách nhau 2 độ
+    .extent([[100, 8], [112, 24]]) 
+    .step([1, 1]);                
 
   graticuleGroup.append("path")
     .datum(graticule)
@@ -224,7 +223,6 @@ Promise.all([
   });
 
   const renderMap = () => {
-    // Lấy giá trị khoảng thời gian
     let startVal = startSelect.property("value");
     let endVal = endSelect.property("value");
 
@@ -305,9 +303,9 @@ Promise.all([
         if (pData) {
           tooltipContent += `
             <hr style="margin: 6px 0; border: none; border-top: 1px dashed rgba(15, 23, 42, 0.2);"/>
-            Nhiệt độ TB: <strong>${pData.avgTemp.toFixed(2)}°C</strong><br/>
-            Cao nhất: <strong>${pData.maxTemp.toFixed(2)}°C</strong><br/>
-            Thấp nhất: <strong>${pData.minTemp.toFixed(2)}°C</strong>
+            Nhiệt độ TB: <strong>${pData.avgTemp.toFixed(2)}°C</strong><br>
+            <span style="color: #be123c;">▲ Cao nhất:</span> ${pData.maxTemp.toFixed(2)}°C<br>
+            <span style="color: #0369a1;">▼ Thấp nhất:</span> ${pData.minTemp.toFixed(2)}°C
           `;
         } else {
           tooltipContent += `<br/><em>Không có dữ liệu</em>`;
@@ -315,13 +313,9 @@ Promise.all([
 
         tooltip.style("opacity", 1).html(tooltipContent);
         
-        // Dùng hàm tính vị trí mới thay vì gán cứng
         updateTooltipPosition(event, tooltip);
       })
-      .on("mousemove", function (event) {
-        // Cập nhật vị trí mỗi khi chuột di chuyển bên trong vùng tỉnh
-        updateTooltipPosition(event, tooltip);
-      })
+      .on("mousemove", (event) => updateTooltipPosition(event, tooltip))
       .on("mouseleave", function () {
         d3.select(this).style("stroke", null).style("stroke-width", null);
         tooltip.style("opacity", 0);
