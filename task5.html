@@ -1261,7 +1261,7 @@
         const color = d3
           .scaleOrdinal()
           .domain(weatherStates)
-          .range(d3.schemeCategory10);
+          .range(d3.schemeDark2); 
 
         function syncStackedBarStyles(hoverKey = null) {
           if (!g) return;

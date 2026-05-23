@@ -531,7 +531,7 @@
           // Tạo trục X (sẽ được cập nhật động)
           let xAxis = d3
             .axisBottom(xScale)
-            .tickFormat((d) => translateWeather(d));
+            .tickFormat(() => "");
 
           // Vẽ trục Y
           g.append("g")
@@ -877,7 +877,7 @@
             // Cập nhật trục X với tickFormat dịch tên thời tiết
             xAxis = d3
               .axisBottom(newXScale)
-              .tickFormat((d) => translateWeather(d));
+              .tickFormat(() => "");
             g.select(".x-axis").transition().duration(750).call(xAxis);
 
             // Update style của text
